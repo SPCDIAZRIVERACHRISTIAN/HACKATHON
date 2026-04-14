@@ -62,6 +62,6 @@ RUN DJANGO_SECRET_KEY=secret DJANGO_DEBUG=false DJANGO_ALLOWED_HOSTS=* python ma
 CMD sh -c "python manage.py migrate && gunicorn Hackathon.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 4 --threads 2"
 
 
-FROM base AS dev
+#FROM base AS dev
 
-RUN poetry install
+#RUN poetry install
