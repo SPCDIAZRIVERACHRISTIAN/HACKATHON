@@ -2,7 +2,6 @@
 
 This template provides a minimal set up to get a React and Django project running.
 
-## Running it
 
 # Running it with Docker
 
@@ -14,6 +13,9 @@ use:
 make setup
 make start
 ```
+
+
+# Running it on to seperate servers
 
 The React code is built and served by Vite, so you need to run this alongside Django.
 
