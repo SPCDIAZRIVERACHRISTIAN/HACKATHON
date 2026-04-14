@@ -12,10 +12,7 @@ use:
 
 ```bash
 make setup
-
 make start
-```
-```
 ```
 
 The React code is built and served by Vite, so you need to run this alongside Django.
