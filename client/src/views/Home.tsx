@@ -1,21 +1,20 @@
 import React, { useMemo, useState } from "react";
+import StudentSection from "../components/StudentSection";
+import JudgeSection from "../components/JudgeSection";
+import StatCard from "../components/StatCard";
+import DashboardSection from "../components/DashboardSection";
+import SidebarButton from "../components/SidebarButton";
 import diLogoUrl from "../assets/di-logo.png";
 import itapLogoUrl from "../assets/itap-logo.png";
 import lightningBgUrl from "../assets/lightning-bg.png";
 import disruptSideBannerUrl from "../assets/disrupt-side-banner.png";
 import {
-  Trophy,
-  Users,
-  ClipboardList,
   BookOpen,
   Lightbulb,
-  ShieldCheck,
   TimerReset,
-  Star,
   ChevronRight,
   CheckCircle2,
   CircleDashed,
-  Gauge,
   MessageSquareWarning,
   Home,
   BarChart3,
@@ -23,8 +22,11 @@ import {
   GraduationCap,
   Bell,
   Search,
+  Trophy,
+  Users,
+  ClipboardList,
+  Gauge,
 } from "lucide-react";
-
 const teamsSeed = [
   {
     id: 1,
@@ -190,7 +192,7 @@ export default function HackathonHomeMockup() {
     }}
   />
 </div>
-  <div className="relative z-10 mx-auto flex w-full max-w-[1500px] gap-6 px-4 py-6 lg:px-6 xl:pr-[80px]">
+  <div className="relative z-10 mx-auto flex w-full max-w-[1500px] gap-6 px-4 py-6 lg:px-6 xl:pr-[100px]">
       
         <aside className="hidden w-72 shrink-0 rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-5 shadow-2xl backdrop-blur lg:block">
           <div className="mb-8">
@@ -344,355 +346,34 @@ export default function HackathonHomeMockup() {
             </div>
           </section>
 
-          {role === "dashboard" && (
-            <div className="grid gap-6 xl:grid-cols-[1.5fr_0.95fr]">
-              <section className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-xl">
-                <div className="mb-5 flex items-center justify-between">
-                  <div>
-                    <h3 className="text-2xl font-semibold">Leaderboard</h3>
-                    <p className="mt-1 text-sm text-zinc-300">
-                      Weighted scores using technical, creativity, impact,
-                      presentation, and UX.
-                    </p>
-                  </div>
-                  <span className="rounded-full bg-[#FF2D6F]/15 px-3 py-1 text-sm text-[#FF4D85]">
-                    Live ranking
-                  </span>
-                </div>
+         {role === "dashboard" && (
+  <DashboardSection rankedTeams={rankedTeams} />
+)}
+         {role === "judge" && (
+  <JudgeSection
+    selectedTeam={selectedTeam}
+    setSelectedTeam={setSelectedTeam}
+    teamsSeed={teamsSeed}
+    scores={scores}
+    setScores={setScores}
+    judgePreviewScore={judgePreviewScore}
+    judgeNotes={judgeNotes}
+    setJudgeNotes={setJudgeNotes}
+    rankedTeams={rankedTeams}
+  />
+)}
 
-                <div className="overflow-hidden rounded-2xl border border-white/10">
-                  <table className="min-w-full text-left text-sm">
-                    <thead className="bg-[#111111] text-zinc-300">
-                      <tr>
-                        <th className="px-4 py-3">Rank</th>
-                        <th className="px-4 py-3">Team</th>
-                        <th className="px-4 py-3">Progress</th>
-                        <th className="px-4 py-3">Help Used</th>
-                        <th className="px-4 py-3">Final Score</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rankedTeams.map((team, index) => (
-                        <tr
-                          key={team.id}
-                          className="border-t border-white/10 bg-black/20"
-                        >
-                          <td className="px-4 py-4 font-semibold text-[#FF2D6F]">
-                            #{index + 1}
-                          </td>
-                          <td className="px-4 py-4">
-                            <div className="font-medium">{team.name}</div>
-                            <div className="text-xs text-zinc-400">
-                              Tech {team.technical} · Creativity{" "}
-                              {team.creativity} · Impact {team.impact}
-                            </div>
-                          </td>
-                          <td className="px-4 py-4">
-                            <div className="mb-2 h-2 rounded-full bg-zinc-800">
-                              <div
-                                className="h-2 rounded-full bg-[#FF2D6F] shadow-[0_0_12px_rgba(255,45,111,0.4)]"
-                                style={{ width: `${team.progress}%` }}
-                              />
-                            </div>
-                            <span className="text-xs text-zinc-300">
-                              {team.progress}% complete
-                            </span>
-                          </td>
-                          <td className="px-4 py-4 text-zinc-300">
-                            {team.helpRequests} tip request(s)
-                          </td>
-                          <td className="px-4 py-4 text-lg font-semibold text-white">
-                            {team.finalScore}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
-
-              <div className="space-y-6">
-                <section className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-xl">
-                  <div className="mb-4 flex items-center gap-3">
-                    <Star className="h-5 w-5 text-[#FF2D6F]" />
-                    <h3 className="text-xl font-semibold">Judging Weights</h3>
-                  </div>
-                  <div className="space-y-3 text-sm">
-                    <WeightRow label="Technical Execution" value="30%" />
-                    <WeightRow label="Creativity + Innovation" value="25%" />
-                    <WeightRow label="Impact + Relevance" value="20%" />
-                    <WeightRow
-                      label="Presentation + Storytelling"
-                      value="15%"
-                    />
-                    <WeightRow label="User Experience" value="10%" />
-                  </div>
-                </section>
-
-                <section className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-xl">
-                  <div className="mb-4 flex items-center gap-3">
-                    <ShieldCheck className="h-5 w-5 text-[#FF2D6F]" />
-                    <h3 className="text-xl font-semibold">Account Types</h3>
-                  </div>
-                  <div className="space-y-3 text-sm text-zinc-300">
-                    <RoleCard
-                      title="Judge Account"
-                      description="Review teams, score categories, leave feedback, and monitor rankings."
-                    />
-                    <RoleCard
-                      title="Student Account"
-                      description="Track milestones, upload progress, view instructions, and request hints."
-                    />
-                    <RoleCard
-                      title="Mentor / Admin"
-                      description="Watch submissions, announce updates, and keep the event organized."
-                    />
-                  </div>
-                </section>
-              </div>
-            </div>
-          )}
-
-          {role === "judge" && (
-            <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-              <section className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-xl">
-                <div className="mb-5 flex items-center justify-between">
-                  <div>
-                    <h3 className="text-2xl font-semibold">
-                      Judge Scoring Panel
-                    </h3>
-                    <p className="mt-1 text-sm text-zinc-300">
-                      Review a team, score it live, and preview the weighted
-                      result.
-                    </p>
-                  </div>
-                  <select
-                    value={selectedTeam}
-                    onChange={(e) => setSelectedTeam(e.target.value)}
-                    className="rounded-xl border border-white/10 bg-[#111111] px-4 py-2 text-sm outline-none"
-                  >
-                    {teamsSeed.map((team) => (
-                      <option key={team.id}>{team.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  {[
-                    ["technical", "Technical Execution", 30],
-                    ["creativity", "Creativity + Innovation", 25],
-                    ["impact", "Impact + Relevance", 20],
-                    ["presentation", "Presentation + Storytelling", 15],
-                    ["ux", "User Experience", 10],
-                  ].map(([key, label, weight]) => (
-                    <div
-                      key={key as string}
-                      className="rounded-2xl border border-white/10 bg-[#1A1A1A] p-4"
-                    >
-                      <div className="mb-3 flex items-center justify-between">
-                        <span className="font-medium">{label}</span>
-                        <span className="text-sm text-[#FF2D6F]">
-                          {scores[key as keyof typeof scores]}/10 · {weight}%
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min={1}
-                        max={10}
-                        value={scores[key as keyof typeof scores]}
-                        onChange={(e) =>
-                          setScores((prev) => ({
-                            ...prev,
-                            [key]: Number(e.target.value),
-                          }))
-                        }
-                        className="w-full accent-[#FF2D6F]"
-                      />
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-5 grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
-                  <div className="rounded-2xl bg-[#FF2D6F]/10 p-4 text-pink-50">
-                    <div className="text-sm">
-                      Weighted preview for {selectedTeam}
-                    </div>
-                    <div className="mt-1 text-4xl font-bold">
-                      {judgePreviewScore}
-                    </div>
-                    <div className="mt-2 text-sm text-pink-200">
-                      Ready for live demo scoring
-                    </div>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-[#1A1A1A] p-4">
-                    <div className="mb-2 font-medium">Judge notes</div>
-                    <textarea
-                      value={judgeNotes}
-                      onChange={(e) => setJudgeNotes(e.target.value)}
-                      className="min-h-[124px] w-full rounded-xl border border-white/10 bg-black/40 p-3 text-sm outline-none"
-                    />
-                  </div>
-                </div>
-              </section>
-
-              <div className="space-y-6">
-                <section className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-xl">
-                  <h3 className="text-xl font-semibold">Review Queue</h3>
-                  <p className="mt-1 text-sm text-zinc-300">
-                    Teams waiting for judge review.
-                  </p>
-                  <div className="mt-4 space-y-3">
-                    {rankedTeams.map((team) => (
-                      <div
-                        key={team.id}
-                        className="rounded-2xl border border-white/10 bg-[#1A1A1A] p-4"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <div className="font-medium">{team.name}</div>
-                            <div className="mt-1 text-sm text-zinc-400">
-                              {team.status}
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => setSelectedTeam(team.name)}
-                            className="rounded-xl bg-[#FF2D6F] px-3 py-2 text-sm font-semibold text-white shadow-[0_0_20px_rgba(255,45,111,0.35)]"
-                          >
-                            Review
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-
-                <section className="rounded-[28px] border border-[#FF2D6F]/20 bg-[#FF2D6F]/10 p-6 shadow-xl">
-                  <div className="mb-3 flex items-center gap-3 text-[#FF4D85]">
-                    <MessageSquareWarning className="h-5 w-5" />
-                    <h3 className="text-xl font-semibold">
-                      Judge Presentation Notes
-                    </h3>
-                  </div>
-                  <ul className="space-y-2 text-sm text-pink-100/90">
-                    <li>• Show weighted scoring clearly.</li>
-                    <li>• Emphasize fairness and consistent criteria.</li>
-                    <li>• Mention live notes and review queue.</li>
-                  </ul>
-                </section>
-              </div>
-            </div>
-          )}
-
-          {role === "student" && (
-            <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-              <section className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-xl">
-                <div className="mb-5 flex items-center justify-between">
-                  <div>
-                    <h3 className="text-2xl font-semibold">
-                      Student Progress + Coaching
-                    </h3>
-                    <p className="mt-1 text-sm text-zinc-300">
-                      Track milestones, show progress clearly, and demonstrate
-                      smart hints with score deductions.
-                    </p>
-                  </div>
-                  <span className="rounded-full bg-[#FF2D6F]/15 px-3 py-1 text-sm text-[#FF4D85]">
-                    Team Nova
-                  </span>
-                </div>
-
-                <div className="mb-4 flex w-fit gap-2 rounded-2xl bg-[#1A1A1A] p-2">
-                  {[
-                    ["all", "All"],
-                    ["done", "Completed"],
-                    ["pending", "Pending"],
-                  ].map(([value, label]) => (
-                    <button
-                      key={value}
-                      onClick={() =>
-                        setStudentTaskFilter(
-                          value as "all" | "done" | "pending"
-                        )
-                      }
-                      className={`rounded-xl px-4 py-2 text-sm ${
-                        studentTaskFilter === value
-                          ? "bg-[#FF2D6F] font-semibold text-white"
-                          : "text-zinc-300"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="space-y-4">
-                  {studentTasks.map((task) => (
-                    <div
-                      key={task.label}
-                      className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#1A1A1A] p-4"
-                    >
-                      {task.done ? (
-                        <CheckCircle2 className="h-5 w-5 text-emerald-300" />
-                      ) : (
-                        <CircleDashed className="h-5 w-5 text-zinc-400" />
-                      )}
-                      <div className="flex-1">
-                        <div className="font-medium">{task.label}</div>
-                        <div className="text-xs text-zinc-400">
-                          {task.done ? "Completed" : "In progress"}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              <div className="space-y-6">
-                <section className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-xl">
-                  <div className="mb-2 flex items-center gap-2 text-[#FF4D85]">
-                    <Lightbulb className="h-4 w-4" />
-                    <span className="font-medium">Smart Hint System</span>
-                  </div>
-                  <p className="text-sm text-zinc-300">
-                    Students can request guided hints when stuck, but each
-                    request deducts points to encourage independent
-                    problem-solving.
-                  </p>
-                  <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                    <div className="rounded-xl bg-[#1A1A1A] p-3">
-                      <div className="text-zinc-400">Hints used</div>
-                      <div className="mt-1 text-xl font-bold">{tipCount}</div>
-                    </div>
-                    <div className="rounded-xl bg-[#1A1A1A] p-3">
-                      <div className="text-zinc-400">Point deduction</div>
-                      <div className="mt-1 text-xl font-bold text-[#FF4D85]">
-                        -{studentPenalty}
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setTipCount((prev) => Math.min(prev + 1, 3))}
-                    className="mt-4 w-full rounded-xl bg-[#FF2D6F] px-4 py-3 font-semibold text-white shadow-[0_0_20px_rgba(255,45,111,0.35)] transition hover:opacity-90"
-                  >
-                    Request AI Mentor Hint
-                  </button>
-                </section>
-
-                <section className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-xl">
-                  <div className="text-sm text-emerald-200">
-                    Projected score after deductions
-                  </div>
-                  <div className="mt-1 text-4xl font-bold">
-                    {adjustedStudentScore}
-                  </div>
-                  <div className="mt-2 text-sm text-zinc-400">
-                    Penalty system shown for demo only.
-                  </div>
-                </section>
-              </div>
-            </div>
-          )}
-
+        {role === "student" && (
+  <StudentSection
+    studentTaskFilter={studentTaskFilter}
+    setStudentTaskFilter={setStudentTaskFilter}
+    studentTasks={studentTasks}
+    tipCount={tipCount}
+    setTipCount={setTipCount}
+    studentPenalty={studentPenalty}
+    adjustedStudentScore={adjustedStudentScore}
+  />
+)}
           <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
             <div className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-xl">
               <div className="mb-5 flex items-center gap-3">
@@ -756,75 +437,4 @@ export default function HackathonHomeMockup() {
   );
 }
 
-function SidebarButton({
-  active,
-  icon,
-  label,
-  onClick,
-}: {
-  active: boolean;
-  icon: React.ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition ${
-        active
-          ? "bg-[#FF2D6F] text-white shadow-[0_0_20px_rgba(255,45,111,0.35)]"
-          : "bg-[#1A1A1A] text-zinc-200 hover:bg-white/10"
-      }`}
-    >
-      {icon}
-      <span className="font-medium">{label}</span>
-    </button>
-  );
-}
 
-function StatCard({
-  icon,
-  label,
-  value,
-  detail,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  detail: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-[#111111] p-4 shadow-[0_0_16px_rgba(255,45,111,0.06)]">
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#FF2D6F]/15 text-[#FF2D6F]">
-        {icon}
-      </div>
-      <div className="text-sm text-zinc-400">{label}</div>
-      <div className="mt-1 text-xl font-bold">{value}</div>
-      <div className="mt-1 text-sm text-zinc-300">{detail}</div>
-    </div>
-  );
-}
-
-function WeightRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#1A1A1A] px-4 py-3">
-      <span>{label}</span>
-      <span className="font-semibold text-[#FF2D6F]">{value}</span>
-    </div>
-  );
-}
-
-function RoleCard({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-[#1A1A1A] p-4">
-      <div className="font-medium text-white">{title}</div>
-      <div className="mt-1 text-zinc-400">{description}</div>
-    </div>
-  );
-}
