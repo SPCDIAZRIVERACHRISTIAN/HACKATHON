@@ -1,5 +1,8 @@
 import React, { useMemo, useState } from "react";
-
+import diLogoUrl from "../assets/di-logo.png";
+import itapLogoUrl from "../assets/itap-logo.png";
+import lightningBgUrl from "../assets/lightning-bg.png";
+import disruptSideBannerUrl from "../assets/disrupt-side-banner.png";
 import {
   Trophy,
   Users,
@@ -21,9 +24,7 @@ import {
   Bell,
   Search,
 } from "lucide-react";
-const diBgUrl = `${import.meta.env.BASE_URL}di-bg.png`;
-const diLogoUrl = `${import.meta.env.BASE_URL}di-logo.png`;
-const itapLogoUrl = `${import.meta.env.BASE_URL}itap-logo.png`;
+
 const teamsSeed = [
   {
     id: 1,
@@ -166,15 +167,31 @@ export default function HackathonHomeMockup() {
   });
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-black text-white">
-      {/* <img
-         src={diBgUrl}
-        alt="background"
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-25"
-      /> */}
-      <div className="absolute inset-0 bg-black/75" />
+  <div className="relative min-h-screen overflow-hidden bg-black text-white">
+  {/* big background mark */}
+  <img
+    src={lightningBgUrl}
+    alt=""
+    className="pointer-events-none absolute left-0 top-0 h-full w-full object-cover opacity-[0.18]"
+  />
 
-      <div className="relative z-10 mx-auto flex max-w-7xl gap-6 px-4 py-6 lg:px-6">
+  {/* lighter overlay for testing */}
+  <div className="absolute inset-0 bg-black/40" />
+
+ {/* Right-side repeating banner */}
+<div className="pointer-events-none absolute inset-y-0 right-0 hidden xl:block w-[170px]">
+  <div
+    className="absolute inset-y-6 right-4 w-[145px] opacity-[0.55]"
+    style={{
+      backgroundImage: `url(${disruptSideBannerUrl})`,
+      backgroundRepeat: "repeat-y",
+      backgroundPosition: "top center",
+      backgroundSize: "145px auto",
+    }}
+  />
+</div>
+  <div className="relative z-10 mx-auto flex w-full max-w-[1500px] gap-6 px-4 py-6 lg:px-6 xl:pr-[80px]">
+      
         <aside className="hidden w-72 shrink-0 rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-5 shadow-2xl backdrop-blur lg:block">
           <div className="mb-8">
             <p className="text-xs uppercase tracking-[0.35em] text-[#FF2D6F]">
@@ -240,16 +257,16 @@ export default function HackathonHomeMockup() {
             <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
               <div className="flex flex-col gap-5">
                 <div className="flex flex-wrap items-center gap-4">
-                  {/* <img
+                   <img
                     src={diLogoUrl}
                     alt="Disruptive Innovation"
                     className="h-16 w-auto object-contain"
-                  /> */}
-                  {/* <img
+                  /> 
+                   <img
                     src={itapLogoUrl}
                     alt="ITAP"
                     className="h-12 w-auto rounded-md bg-white p-1 object-contain"
-                  /> */}
+                  /> 
                 </div>
 
                 <div>
