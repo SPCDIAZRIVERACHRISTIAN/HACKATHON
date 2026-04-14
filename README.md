@@ -4,6 +4,20 @@ This template provides a minimal set up to get a React and Django project runnin
 
 ## Running it
 
+# Running it with Docker
+
+To run the project with docker make sure to have make installed in you machine.
+
+use:
+
+```bash
+make setup
+
+make start
+```
+```
+```
+
 The React code is built and served by Vite, so you need to run this alongside Django.
 
 To run Django, run the following commands:
