@@ -1,0 +1,33 @@
+{
+  "src/assets/di-logo.png": {
+    "file": "assets/di-logo-DYN-i16S.png",
+    "src": "src/assets/di-logo.png"
+  },
+  "src/assets/disrupt-side-banner.png": {
+    "file": "assets/disrupt-side-banner-B1qGiN_N.png",
+    "src": "src/assets/disrupt-side-banner.png"
+  },
+  "src/assets/itap-logo.png": {
+    "file": "assets/itap-logo-CVNy5ScY.png",
+    "src": "src/assets/itap-logo.png"
+  },
+  "src/assets/lightning-bg.png": {
+    "file": "assets/lightning-bg-DP5kKhqI.png",
+    "src": "src/assets/lightning-bg.png"
+  },
+  "src/main.tsx": {
+    "file": "assets/main-CZHuKzWe.js",
+    "name": "main",
+    "src": "src/main.tsx",
+    "isEntry": true,
+    "css": [
+      "assets/main-DcCUgiyG.css"
+    ],
+    "assets": [
+      "assets/di-logo-DYN-i16S.png",
+      "assets/itap-logo-CVNy5ScY.png",
+      "assets/lightning-bg-DP5kKhqI.png",
+      "assets/disrupt-side-banner-B1qGiN_N.png"
+    ]
+  }
+}
