@@ -137,7 +137,7 @@ export default function StudentView() {
       <Sidebar active="student" />
 
       <main className="flex-1 space-y-6">
-        <PageHero title="University Hackathon Student Portal" />
+        <PageHero title="University Hackathon Student Portal" active="student"/>
 
         <section className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-2xl backdrop-blur">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
