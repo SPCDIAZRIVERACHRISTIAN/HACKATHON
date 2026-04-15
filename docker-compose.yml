@@ -5,7 +5,8 @@ services:
       dockerfile: server/Dockerfile
       target: dev
     init: true
-    command: django-admin runserver 0.0.0.0:8000
+    command: sh /app/entrypoint.sh
+    # command: django-admin runserver 0.0.0.0:8000
     environment:
       DJANGO_SECRET_KEY: secret
       DJANGO_DEBUG: "true"
@@ -26,9 +27,10 @@ services:
       dockerfile: client/Dockerfile
       target: dev
     init: true
-    command: npm run dev -- --host
+    command: npm run dev -- --host 0.0.0.0
     volumes:
       - ./client:/client/
+      - /client/node_modules
     ports:
       - 5173:5173
 

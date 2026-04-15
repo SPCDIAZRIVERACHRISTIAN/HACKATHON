@@ -23,5 +23,9 @@ from . import views
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", views.home, name="home"),
+    path("dashboard/", views.dashboard, name="dashboard"),
+    path("judge/", views.judge, name="judge"),
+    path("student/", views.student, name="student"),
+    path("admin-panel/", views.admin_panel, name="admin_panel"),
     path("api/", include("teams.urls")),
 ]
