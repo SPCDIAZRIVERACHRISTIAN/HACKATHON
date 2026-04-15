@@ -1,4 +1,4 @@
-type NavItem = "dashboard" | "judge" | "student";
+type NavItem = "dashboard" | "judge" | "student" | "none";
 
 type Props = {
   active: NavItem;

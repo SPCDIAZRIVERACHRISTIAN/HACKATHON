@@ -6,7 +6,7 @@ import RoleNavbar from "./RoleNavbar";
 type Props = {
   title?: string;
   subtitle?: string;
-  active: "dashboard" | "judge" | "student";
+  active: "dashboard" | "judge" | "student" | "none";
 };
 
 export default function PageHero({
@@ -19,11 +19,13 @@ export default function PageHero({
       <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
         <div className="flex flex-col gap-5">
           <div className="flex flex-wrap items-center gap-4">
-            <img
-              src={diLogoUrl}
-              alt="Disruptive Innovation"
-              className="h-16 w-auto object-contain"
-            />
+            <a href="/">
+              <img
+                src={diLogoUrl}
+                alt="Disruptive Innovation"
+                className="h-16 w-auto object-contain"
+              />
+            </a>
             <img
               src={itapLogoUrl}
               alt="ITAP"
