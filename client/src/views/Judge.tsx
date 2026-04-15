@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import PageHero from "../components/PageHero";
 import AppLayout from "../components/AppLayout";
 import Sidebar from "../components/Sidebar";

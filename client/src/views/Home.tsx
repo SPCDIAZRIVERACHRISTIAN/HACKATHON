@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import StudentSection from "../components/StudentSection";
 import JudgeSection from "../components/JudgeSection";
 import StatCard from "../components/StatCard";
@@ -10,12 +10,10 @@ import lightningBgUrl from "../assets/lightning-bg.png";
 import disruptSideBannerUrl from "../assets/disrupt-side-banner.png";
 import {
   BookOpen,
-  Lightbulb,
   TimerReset,
   ChevronRight,
   CheckCircle2,
   CircleDashed,
-  MessageSquareWarning,
   Home,
   BarChart3,
   UserRoundCog,
