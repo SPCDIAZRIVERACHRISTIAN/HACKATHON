@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 type Props = {
-  active: "dashboard" | "judge" | "student";
+  active: "dashboard" | "judge" | "student" | "none";
 };
 
 export default function Sidebar({ active }: Props) {
