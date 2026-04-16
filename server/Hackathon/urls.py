@@ -28,4 +28,5 @@ urlpatterns = [
     path("student/", views.student, name="student"),
     path("admin-panel/", views.admin_panel, name="admin_panel"),
     path("api/", include("teams.urls")),
+    path("api/ai-model/", include("ai_model.urls")),
 ]
