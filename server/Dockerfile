@@ -47,6 +47,8 @@ COPY --chown=Hackathon server .
 # Install project
 RUN poetry install --only main
 
+COPY server/requirements.txt .
+RUN pip install -r requirements.txt
 
 FROM base AS prod
 
