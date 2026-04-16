@@ -1,26 +1,33 @@
 import diLogoUrl from "../assets/di-logo.png";
 import itapLogoUrl from "../assets/itap-logo.png";
 import { Search } from "lucide-react";
+import RoleNavbar from "./RoleNavbar";
 
 type Props = {
   title?: string;
   subtitle?: string;
+  active: "dashboard" | "judge" | "student" | "admin" | "none";
+  role: "admin" | "judge" | "student";
 };
 
 export default function PageHero({
   title = "University Hackathon Dashboard",
   subtitle = "Clean, presentable front end for live judging, student progress, clear instructions, and leaderboard tracking.",
+  active,
+  role,
 }: Props) {
   return (
     <section className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-2xl backdrop-blur">
       <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
         <div className="flex flex-col gap-5">
           <div className="flex flex-wrap items-center gap-4">
-            <img
-              src={diLogoUrl}
-              alt="Disruptive Innovation"
-              className="h-16 w-auto object-contain"
-            />
+            <a href="/">
+              <img
+                src={diLogoUrl}
+                alt="Disruptive Innovation"
+                className="h-16 w-auto object-contain"
+              />
+            </a>
             <img
               src={itapLogoUrl}
               alt="ITAP"
@@ -47,6 +54,7 @@ export default function PageHero({
               placeholder="Search teams, judges, or submissions"
             />
           </div>
+          <RoleNavbar active={active} role={role} />
         </div>
       </div>
     </section>

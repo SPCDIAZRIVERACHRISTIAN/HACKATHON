@@ -131,13 +131,15 @@ export default function StudentView() {
     if (studentTaskFilter === "pending") return !task.done;
     return true;
   });
-
+const role =
+  (localStorage.getItem("role") as "admin" | "judge" | "student") ||
+  "student";
   return (
     <AppLayout>
-      <Sidebar active="student" />
+      <Sidebar active="student" role={role} />
 
       <main className="flex-1 space-y-6">
-        <PageHero title="University Hackathon Student Portal" />
+        <PageHero title="University Hackathon Student Portal" active="student" role={role} />
 
         <section className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-2xl backdrop-blur">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

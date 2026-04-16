@@ -30,4 +30,5 @@ urlpatterns = [
     path("api/", include("teams.urls")),
     path("api/users/", include("users.urls")),
     path("api/users/", include("teams.urls")),
+    path("login/", views.login_view, name="login"),
 ]

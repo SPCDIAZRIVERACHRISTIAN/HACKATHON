@@ -1,9 +1,10 @@
+import type { ReactNode } from "react";
 import lightningBgUrl from "../assets/lightning-bg.png";
 import disruptSideBannerUrl from "../assets/disrupt-side-banner.png";
-type Props = {
-  children: React.ReactNode;
-};
 
+type Props = {
+  children: ReactNode;
+};
 export default function AppLayout({ children }: Props) {
   return (
     <div className="relative min-h-screen overflow-hidden bg-black text-white">

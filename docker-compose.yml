@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: server/Dockerfile
-      target: dev
+      target: base
     init: true
     command: sh /app/entrypoint.sh
     # command: django-admin runserver 0.0.0.0:8000
@@ -16,7 +16,6 @@ services:
       - 8000:8000
     volumes:
       - ./server:/app/
-      - ./client:/client/
     depends_on:
       postgres:
         condition: service_healthy

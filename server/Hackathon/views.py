@@ -19,3 +19,6 @@ def student(request):
 
 def admin_panel(request):
     return Response(request, "Admin", {})
+
+def login_view(request):
+    return Response(request, "Login", {})

@@ -6,13 +6,18 @@ import {
   ClipboardList,
   BarChart3,
   Bell,
+  ShieldCheck,
 } from "lucide-react";
 
+type ActiveView = "dashboard" | "judge" | "student" | "admin" | "none";
+type UserRole = "admin" | "judge" | "student";
+
 type Props = {
-  active: "dashboard" | "judge" | "student";
+  active: ActiveView;
+  role: UserRole;
 };
 
-export default function Sidebar({ active }: Props) {
+export default function Sidebar({ active, role }: Props) {
   return (
     <aside className="hidden w-72 shrink-0 rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-5 shadow-2xl backdrop-blur lg:block">
       <div className="mb-8">
@@ -34,30 +39,47 @@ export default function Sidebar({ active }: Props) {
           label="Dashboard"
           onClick={() => (window.location.href = "/dashboard/")}
         />
-        <SidebarButton
-          active={active === "judge"}
-          icon={<UserRoundCog className="h-4 w-4" />}
-          label="Judge View"
-          onClick={() => (window.location.href = "/judge/")}
-        />
-        <SidebarButton
-          active={active === "student"}
-          icon={<GraduationCap className="h-4 w-4" />}
-          label="Student View"
-          onClick={() => (window.location.href = "/student/")}
-        />
-        <SidebarButton
-          active={false}
-          icon={<ClipboardList className="h-4 w-4" />}
-          label="Submissions"
-          onClick={() => {}}
-        />
-        <SidebarButton
-          active={false}
-          icon={<BarChart3 className="h-4 w-4" />}
-          label="Analytics"
-          onClick={() => {}}
-        />
+
+        {(role === "admin" || role === "judge") && (
+          <SidebarButton
+            active={active === "judge"}
+            icon={<UserRoundCog className="h-4 w-4" />}
+            label="Judge View"
+            onClick={() => (window.location.href = "/judge/")}
+          />
+        )}
+
+        {(role === "admin" || role === "student") && (
+          <SidebarButton
+            active={active === "student"}
+            icon={<GraduationCap className="h-4 w-4" />}
+            label="Student View"
+            onClick={() => (window.location.href = "/student/")}
+          />
+        )}
+
+        {role === "admin" && (
+          <>
+            <SidebarButton
+              active={active === "admin"}
+              icon={<ShieldCheck className="h-4 w-4" />}
+              label="Admin View"
+              onClick={() => (window.location.href = "/admin-panel/")}
+            />
+            <SidebarButton
+              active={false}
+              icon={<ClipboardList className="h-4 w-4" />}
+              label="Submissions"
+              onClick={() => {}}
+            />
+            <SidebarButton
+              active={false}
+              icon={<BarChart3 className="h-4 w-4" />}
+              label="Analytics"
+              onClick={() => {}}
+            />
+          </>
+        )}
       </nav>
 
       <div className="mt-8 rounded-2xl border border-[#FF2D6F]/20 bg-[#FF2D6F]/10 p-4">

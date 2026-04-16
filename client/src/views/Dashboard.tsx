@@ -111,14 +111,16 @@ export default function DashboardView() {
       }))
       .sort((a, b) => b.finalScore - a.finalScore);
   }, []);
-
+const role =
+  (localStorage.getItem("role") as "admin" | "judge" | "student") ||
+  "student";
   return (
     <AppLayout>
-      <Sidebar active="dashboard" />
+      
 
+    <Sidebar active="dashboard" role={role} />
       <main className="flex-1 space-y-6">
-        <PageHero />
-
+        <PageHero active="dashboard" role={role} />
         <section className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-2xl backdrop-blur">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <StatCard
