@@ -133,13 +133,16 @@ export default function JudgeView() {
       scores.ux * weights.ux;
     return raw.toFixed(2);
   }, [scores]);
-
+const role =
+  (localStorage.getItem("role") as "admin" | "judge" | "student") ||
+  "judge";
   return (
     <AppLayout>
-      <Sidebar active="judge" />
+      <Sidebar active="judge" role={role} />
 
       <main className="flex-1 space-y-6">
-        <PageHero title="University Hackathon Judge Portal" active="judge"/>
+       
+        <PageHero title="University Hackathon Judge Portal" active="judge" role={role} />
 
         <section className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-2xl backdrop-blur">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

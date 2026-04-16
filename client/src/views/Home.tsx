@@ -1,201 +1,204 @@
-import { useMemo } from "react";
-import AppLayout from "../components/AppLayout";
-import PageHero from "../components/PageHero";
-import Sidebar from "../components/Sidebar";
-import StatCard from "../components/StatCard";
+
 import {
+  ArrowRight,
+  ShieldCheck,
   Trophy,
   Users,
-  ClipboardList,
-  Gauge,
-  BookOpen,
-  TimerReset,
-  ChevronRight,
-  CheckCircle2,
-  CircleDashed,
+  BarChart3,
+  GraduationCap,
+  UserRoundCog,
 } from "lucide-react";
+import AppLayout from "../components/AppLayout";
+import diLogoUrl from "../assets/di-logo.png";
+import itapLogoUrl from "../assets/itap-logo.png";
 
-const teamsSeed = [
+const features = [
   {
-    id: 1,
-    name: "Team Nova",
-    technical: 9,
-    creativity: 8,
-    impact: 9,
-    presentation: 7,
-    ux: 8,
-    progress: 92,
-    helpRequests: 1,
-    status: "Near submission",
+    title: "Live Dashboard",
+    description:
+      "Track teams, scores, progress, and submissions from one central view.",
+    icon: <BarChart3 className="h-6 w-6" />,
   },
   {
-    id: 2,
-    name: "Team Orbit",
-    technical: 8,
-    creativity: 10,
-    impact: 8,
-    presentation: 8,
-    ux: 7,
-    progress: 87,
-    helpRequests: 0,
-    status: "Strong momentum",
+    title: "Judge Workflow",
+    description:
+      "Allow judges to review projects, score teams, and leave notes clearly.",
+    icon: <UserRoundCog className="h-6 w-6" />,
   },
   {
-    id: 3,
-    name: "Team Pulse",
-    technical: 7,
-    creativity: 9,
-    impact: 7,
-    presentation: 9,
-    ux: 9,
-    progress: 79,
-    helpRequests: 2,
-    status: "Needs review",
-  },
-  {
-    id: 4,
-    name: "Team Cipher",
-    technical: 8,
-    creativity: 7,
-    impact: 8,
-    presentation: 7,
-    ux: 8,
-    progress: 73,
-    helpRequests: 1,
-    status: "On track",
+    title: "Student Experience",
+    description:
+      "Give participants a clean way to follow tasks, milestones, and updates.",
+    icon: <GraduationCap className="h-6 w-6" />,
   },
 ];
 
-const weights = {
-  technical: 0.3,
-  creativity: 0.25,
-  impact: 0.2,
-  presentation: 0.15,
-  ux: 0.1,
-};
-
-const instructions = [
-  "Choose a challenge track and define the problem clearly.",
-  "Build a polished demo-first interface that can be shown live.",
-  "Upload progress checkpoints so judges can review live updates.",
-  "Present a simple story: problem, solution, impact, and user experience.",
+const roles = [
+  {
+    title: "Admin",
+    description: "Access all views, manage the platform, and oversee activity.",
+    icon: <ShieldCheck className="h-5 w-5" />,
+  },
+  {
+    title: "Judge",
+    description: "Access the dashboard and judging tools for project evaluation.",
+    icon: <Trophy className="h-5 w-5" />,
+  },
+  {
+    title: "Student",
+    description:
+      "Access the dashboard and student workspace during the hackathon.",
+    icon: <Users className="h-5 w-5" />,
+  },
 ];
 
-const timeline = [
-  { label: "Kickoff", time: "7:30 AM - 8:00 AM", done: true },
-  { label: "Ideation + Development", time: "8:00 AM - 11:30 AM", done: true },
-  { label: "Lunch Break", time: "11:30 AM - 12:30 PM", done: true },
-  { label: "Development Phase 2", time: "12:30 PM - 2:45 PM", done: false },
-  { label: "Wrap-Up + Submissions", time: "2:45 PM - 3:00 PM", done: false },
-  { label: "Judging + Awards", time: "3:00 PM onward", done: false },
-];
-
-function weightedScore(team: (typeof teamsSeed)[number]) {
-  return (
-    team.technical * weights.technical +
-    team.creativity * weights.creativity +
-    team.impact * weights.impact +
-    team.presentation * weights.presentation +
-    team.ux * weights.ux -
-    team.helpRequests * 0.15
-  );
-}
-
-export default function HomeView() {
-  const rankedTeams = useMemo(() => {
-    return [...teamsSeed]
-      .map((team) => ({
-        ...team,
-        finalScore: Number(weightedScore(team).toFixed(2)),
-      }))
-      .sort((a, b) => b.finalScore - a.finalScore);
-  }, []);
-
+export default function Home() {
   return (
     <AppLayout>
-      <Sidebar active="none" />
+      <main className="w-full space-y-8">
+        <section className="rounded-[32px] border border-white/10 bg-[#0A0A0A]/90 p-8 shadow-2xl backdrop-blur">
+          <div className="flex flex-col gap-8 xl:flex-row xl:items-center xl:justify-between">
+            <div className="max-w-3xl">
+              <div className="mb-6 flex flex-wrap items-center gap-4">
+                <img
+                  src={diLogoUrl}
+                  alt="Disruptive Innovation"
+                  className="h-16 w-auto object-contain"
+                />
+                <img
+                  src={itapLogoUrl}
+                  alt="ITAP"
+                  className="h-12 w-auto rounded-md bg-white p-1 object-contain"
+                />
+              </div>
 
-      <main className="flex-1 space-y-6">
-        <PageHero active="none" />
+              <p className="mb-3 text-sm uppercase tracking-[0.3em] text-[#FF2D6F]">
+                ITAP Hackathon Platform
+              </p>
 
-        <section className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-2xl backdrop-blur">
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <StatCard
-              icon={<Trophy className="h-5 w-5" />}
-              label="Leading Team"
-              value={rankedTeams[0].name}
-              detail={`${rankedTeams[0].finalScore} pts`}
-            />
-            <StatCard
-              icon={<Users className="h-5 w-5" />}
-              label="Active Teams"
-              value="12"
-              detail="4 currently featured"
-            />
-            <StatCard
-              icon={<ClipboardList className="h-5 w-5" />}
-              label="Judge Accounts"
-              value="5"
-              detail="3 faculty + 2 guests"
-            />
-            <StatCard
-              icon={<Gauge className="h-5 w-5" />}
-              label="Live Submissions"
-              value="9"
-              detail="Updates synced in real time"
-            />
+              <h1 className="text-4xl font-bold tracking-tight text-white md:text-5xl">
+                A centralized hackathon experience for admins, judges, and
+                students
+              </h1>
+
+              <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-300">
+                This project provides a polished platform for running a
+                university hackathon with role-based access, live dashboards,
+                judge scoring flows, and student progress tracking. It is built
+                to make the event easier to manage and more professional to
+                present.
+              </p>
+
+              <div className="mt-8 flex flex-wrap gap-3">
+               <a
+  href="/login/"
+  className="inline-flex items-center gap-2 rounded-2xl bg-[#FF2D6F] px-5 py-3 font-medium text-white transition hover:scale-[1.02]"
+>
+  Go to Login
+  <ArrowRight className="h-4 w-4" />
+</a>
+
+<a
+  href="/dashboard/"
+  className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-5 py-3 font-medium text-white transition hover:bg-white/10"
+>
+  Preview Dashboard
+</a>
+              </div>
+            </div>
+
+            <div className="grid min-w-[280px] gap-4 sm:grid-cols-3 xl:grid-cols-1 xl:min-w-[320px]">
+              <div className="rounded-2xl border border-white/10 bg-[#151515] p-5">
+                <p className="text-sm text-zinc-400">Users</p>
+                <p className="mt-2 text-3xl font-bold text-white">
+                  3 Roles
+                </p>
+                <p className="mt-2 text-sm text-zinc-300">
+                  Admin, Judge, and Student access levels
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-[#151515] p-5">
+                <p className="text-sm text-zinc-400">Purpose</p>
+                <p className="mt-2 text-3xl font-bold text-white">
+                  One Platform
+                </p>
+                <p className="mt-2 text-sm text-zinc-300">
+                  One place for event overview, judging, and student tracking
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-[#151515] p-5">
+                <p className="text-sm text-zinc-400">Focus</p>
+                <p className="mt-2 text-3xl font-bold text-white">
+                  Live Demo
+                </p>
+                <p className="mt-2 text-sm text-zinc-300">
+                  Designed to be visually clean and presentation-ready
+                </p>
+              </div>
+            </div>
           </div>
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-          <div className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-xl">
-            <div className="mb-5 flex items-center gap-3">
-              <BookOpen className="h-5 w-5 text-[#FF2D6F]" />
-              <div>
-                <h3 className="text-2xl font-semibold">Clear Instructions</h3>
-                <p className="text-sm text-zinc-300">
-                  Simple guidance everyone can scan quickly during the presentation.
-                </p>
+        <section className="grid gap-6 lg:grid-cols-3">
+          {features.map((feature) => (
+            <div
+              key={feature.title}
+              className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-xl"
+            >
+              <div className="mb-4 inline-flex rounded-2xl bg-[#FF2D6F]/15 p-3 text-[#FF2D6F]">
+                {feature.icon}
               </div>
+              <h2 className="text-xl font-semibold text-white">
+                {feature.title}
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-zinc-300">
+                {feature.description}
+              </p>
             </div>
-            <div className="space-y-3">
-              {instructions.map((item) => (
-                <div
-                  key={item}
-                  className="flex gap-3 rounded-2xl border border-white/10 bg-[#1A1A1A] p-4"
-                >
-                  <ChevronRight className="mt-0.5 h-4 w-4 text-[#FF2D6F]" />
-                  <p className="text-zinc-200">{item}</p>
-                </div>
-              ))}
-            </div>
+          ))}
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+          <div className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-xl">
+            <p className="mb-2 text-sm uppercase tracking-[0.25em] text-[#FF2D6F]">
+              Project Overview
+            </p>
+            <h2 className="text-2xl font-semibold text-white">
+              What this hackathon platform is meant to do
+            </h2>
+            <p className="mt-4 leading-7 text-zinc-300">
+              The goal of this system is to support the full hackathon flow with
+              a modern interface. Instead of having disconnected tools, it brings
+              together project visibility, scoring, participant guidance, and
+              role-specific access into one experience.
+            </p>
+            <p className="mt-4 leading-7 text-zinc-300">
+              As your backend teammate finishes the user and database setup, this
+              frontend will be ready to connect real authentication and role
+              permissions without changing the overall layout structure.
+            </p>
           </div>
 
           <div className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-xl">
-            <div className="mb-5 flex items-center gap-3">
-              <TimerReset className="h-5 w-5 text-[#FF2D6F]" />
-              <div>
-                <h3 className="text-2xl font-semibold">Event Timeline</h3>
-                <p className="text-sm text-zinc-300">
-                  A polished timeline block for the presentation demo.
-                </p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              {timeline.map((step) => (
+            <p className="mb-4 text-sm uppercase tracking-[0.25em] text-[#FF2D6F]">
+              Access Levels
+            </p>
+
+            <div className="space-y-4">
+              {roles.map((role) => (
                 <div
-                  key={step.label}
-                  className="flex items-start gap-3 rounded-2xl border border-white/10 bg-[#1A1A1A] p-4"
+                  key={role.title}
+                  className="rounded-2xl border border-white/10 bg-[#151515] p-4"
                 >
-                  {step.done ? (
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-300" />
-                  ) : (
-                    <CircleDashed className="mt-0.5 h-5 w-5 text-zinc-400" />
-                  )}
-                  <div>
-                    <div className="font-medium">{step.label}</div>
-                    <div className="text-sm text-zinc-400">{step.time}</div>
+                  <div className="flex items-center gap-3 text-white">
+                    <div className="text-[#FF2D6F]">{role.icon}</div>
+                    <h3 className="font-semibold">{role.title}</h3>
                   </div>
+                  <p className="mt-2 text-sm leading-6 text-zinc-300">
+                    {role.description}
+                  </p>
                 </div>
               ))}
             </div>
