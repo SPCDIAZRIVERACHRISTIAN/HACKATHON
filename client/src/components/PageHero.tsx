@@ -6,13 +6,15 @@ import RoleNavbar from "./RoleNavbar";
 type Props = {
   title?: string;
   subtitle?: string;
-  active: "dashboard" | "judge" | "student" | "none";
+  active: "dashboard" | "judge" | "student" | "admin" | "none";
+  role: "admin" | "judge" | "student";
 };
 
 export default function PageHero({
   title = "University Hackathon Dashboard",
   subtitle = "Clean, presentable front end for live judging, student progress, clear instructions, and leaderboard tracking.",
   active,
+  role,
 }: Props) {
   return (
     <section className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-2xl backdrop-blur">
@@ -52,7 +54,7 @@ export default function PageHero({
               placeholder="Search teams, judges, or submissions"
             />
           </div>
-          <RoleNavbar active={active} />
+          <RoleNavbar active={active} role={role} />
         </div>
       </div>
     </section>
