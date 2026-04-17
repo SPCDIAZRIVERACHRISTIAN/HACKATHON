@@ -12,6 +12,8 @@ services:
       DJANGO_DEBUG: "true"
       DJANGO_ALLOWED_HOSTS: "*"
       DATABASE_URL: postgres://postgres@postgres/postgres
+      appAccessKey: ${appAccessKey}
+      appSecretKey: ${appSecretKey}
     ports:
       - 8000:8000
     volumes:

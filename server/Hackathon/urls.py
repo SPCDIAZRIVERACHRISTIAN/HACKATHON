@@ -31,4 +31,5 @@ urlpatterns = [
     path("api/users/", include("users.urls")),
     path("login/", views.login_view, name="login"),
     path("create-account/", views.create_account, name="create_account"),
+    path("api/ai-model/", include("ai_model.urls")),
 ]
