@@ -1,16 +1,24 @@
-type NavItem = "dashboard" | "judge" | "student" | "none";
+type NavItem = "dashboard" | "judge" | "student" | "admin" | "none";
+type UserRole = "admin" | "judge" | "student";
 
 type Props = {
   active: NavItem;
+  role: UserRole;
 };
 
-const navItems: { value: NavItem; label: string; href: string }[] = [
-  { value: "dashboard", label: "Dashboard", href: "/dashboard/" },
-  { value: "judge", label: "Judge View", href: "/judge/" },
-  { value: "student", label: "Student View", href: "/student/" },
-];
+export default function RoleNavbar({ active, role }: Props) {
+  const navItems = [
+    { value: "dashboard", label: "Dashboard", href: "/dashboard/" },
 
-export default function RoleNavbar({ active }: Props) {
+    ...(role === "admin" || role === "judge"
+      ? [{ value: "judge", label: "Judge View", href: "/judge/" }]
+      : []),
+
+    ...(role === "admin" || role === "student"
+      ? [{ value: "student", label: "Student View", href: "/student/" }]
+      : []),
+  ];
+
   return (
     <nav className="grid grid-cols-3 gap-2 rounded-2xl bg-[#111111] p-2">
       {navItems.map(({ value, label, href }) => (
