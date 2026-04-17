@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "teams",
     "users",
+    "ai_model",
 ]
 
 MIDDLEWARE = [
