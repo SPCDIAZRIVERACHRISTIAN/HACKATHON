@@ -5,8 +5,8 @@ import {
   GraduationCap,
   ClipboardList,
   BarChart3,
-  Bell,
   ShieldCheck,
+  LogOut,
 } from "lucide-react";
 
 type ActiveView = "dashboard" | "judge" | "student" | "admin" | "none";
@@ -18,17 +18,29 @@ type Props = {
 };
 
 export default function Sidebar({ active, role }: Props) {
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/users/logout/", { method: "POST" });
+    } catch {
+      // continue with client-side cleanup even if request fails
+    }
+    localStorage.removeItem("role");
+    localStorage.removeItem("username");
+    localStorage.removeItem("fullName");
+    window.location.href = "/login/";
+  };
+
   return (
-    <aside className="hidden w-72 shrink-0 rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-5 shadow-2xl backdrop-blur lg:block">
-      <div className="mb-8">
+    <aside className="hidden w-auto min-w-[220px] max-w-[280px] shrink-0 rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-5 shadow-2xl backdrop-blur lg:block">
+      <div className="mb-6">
         <p className="text-xs uppercase tracking-[0.35em] text-[#FF2D6F]">
           Disruptive Innovation
         </p>
-        <h1 className="mt-3 text-2xl font-bold">
-          ITAP Hackathon Control Center
+        <h1 className="mt-3 text-xl font-bold">
+          ITAP Hackathon
         </h1>
-        <p className="mt-2 text-sm text-zinc-400">
-          Demo-ready workspace for judges, students, and admins.
+        <p className="mt-1 text-sm text-zinc-400 capitalize">
+          {role} Portal
         </p>
       </div>
 
@@ -36,7 +48,7 @@ export default function Sidebar({ active, role }: Props) {
         <SidebarButton
           active={active === "dashboard"}
           icon={<Home className="h-4 w-4" />}
-          label="Dashboard"
+          label="Home"
           onClick={() => (window.location.href = "/dashboard/")}
         />
 
@@ -82,17 +94,14 @@ export default function Sidebar({ active, role }: Props) {
         )}
       </nav>
 
-      <div className="mt-8 rounded-2xl border border-[#FF2D6F]/20 bg-[#FF2D6F]/10 p-4">
-        <div className="mb-2 flex items-center gap-2 text-[#FF2D6F]">
-          <Bell className="h-4 w-4" />
-          <span className="font-medium">Tomorrow’s Demo Flow</span>
-        </div>
-        <ul className="space-y-2 text-sm text-zinc-200">
-          <li>1. Open leaderboard</li>
-          <li>2. Switch to judge scoring</li>
-          <li>3. Show student progress + hints</li>
-          <li>4. End with instructions and timeline</li>
-        </ul>
+      <div className="mt-6 border-t border-white/10 pt-4">
+        <button
+          onClick={handleLogout}
+          className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-zinc-400 transition hover:bg-red-500/10 hover:text-red-400"
+        >
+          <LogOut className="h-4 w-4" />
+          <span className="font-medium">Logout</span>
+        </button>
       </div>
     </aside>
   );

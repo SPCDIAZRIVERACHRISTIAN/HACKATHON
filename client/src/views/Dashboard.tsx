@@ -1,9 +1,6 @@
-import { useMemo } from "react";
-import PageHero from "../components/PageHero";
 import AppLayout from "../components/AppLayout";
-import DashboardSection from "../components/DashboardSection";
 import Sidebar from "../components/Sidebar";
-import StatCard from "../components/StatCard";
+import PageHero from "../components/PageHero";
 import {
   Trophy,
   Users,
@@ -14,73 +11,12 @@ import {
   ChevronRight,
   CheckCircle2,
   CircleDashed,
+  Rocket,
+  Lightbulb,
+  MessageSquare,
+  Zap,
 } from "lucide-react";
-
-const teamsSeed = [
-  {
-    id: 1,
-    name: "Team Nova",
-    technical: 9,
-    creativity: 8,
-    impact: 9,
-    presentation: 7,
-    ux: 8,
-    progress: 92,
-    helpRequests: 1,
-    status: "Near submission",
-  },
-  {
-    id: 2,
-    name: "Team Orbit",
-    technical: 8,
-    creativity: 10,
-    impact: 8,
-    presentation: 8,
-    ux: 7,
-    progress: 87,
-    helpRequests: 0,
-    status: "Strong momentum",
-  },
-  {
-    id: 3,
-    name: "Team Pulse",
-    technical: 7,
-    creativity: 9,
-    impact: 7,
-    presentation: 9,
-    ux: 9,
-    progress: 79,
-    helpRequests: 2,
-    status: "Needs review",
-  },
-  {
-    id: 4,
-    name: "Team Cipher",
-    technical: 8,
-    creativity: 7,
-    impact: 8,
-    presentation: 7,
-    ux: 8,
-    progress: 73,
-    helpRequests: 1,
-    status: "On track",
-  },
-];
-
-const weights = {
-  technical: 0.3,
-  creativity: 0.25,
-  impact: 0.2,
-  presentation: 0.15,
-  ux: 0.1,
-};
-
-const instructions = [
-  "Choose a challenge track and define the problem clearly.",
-  "Build a polished demo-first interface that can be shown live.",
-  "Upload progress checkpoints so judges can review live updates.",
-  "Present a simple story: problem, solution, impact, and user experience.",
-];
+import StatCard from "../components/StatCard";
 
 const timeline = [
   { label: "Kickoff", time: "7:30 AM - 8:00 AM", done: true },
@@ -91,43 +27,57 @@ const timeline = [
   { label: "Judging + Awards", time: "3:00 PM onward", done: false },
 ];
 
-function weightedScore(team: (typeof teamsSeed)[number]) {
-  return (
-    team.technical * weights.technical +
-    team.creativity * weights.creativity +
-    team.impact * weights.impact +
-    team.presentation * weights.presentation +
-    team.ux * weights.ux -
-    team.helpRequests * 0.15
-  );
-}
+const announcements = [
+  {
+    title: "Submission Deadline Extended",
+    detail: "Final submissions now due at 3:15 PM. Use the extra time wisely!",
+    icon: <Zap className="h-5 w-5" />,
+  },
+  {
+    title: "Judging Criteria Published",
+    detail:
+      "Technical (30%), Creativity (25%), Impact (20%), Presentation (15%), UX (10%).",
+    icon: <ClipboardList className="h-5 w-5" />,
+  },
+  {
+    title: "Mentors Available",
+    detail:
+      "Industry mentors are available in the breakout rooms for quick feedback sessions.",
+    icon: <MessageSquare className="h-5 w-5" />,
+  },
+];
+
+const quickTips = [
+  "Focus on a working demo over feature completeness.",
+  "Practice your pitch — judges score presentation too.",
+  "Commit early and often to avoid last-minute surprises.",
+  "Use the hint system if you're stuck — small deductions beat wasted time.",
+];
 
 export default function DashboardView() {
-  const rankedTeams = useMemo(() => {
-    return [...teamsSeed]
-      .map((team) => ({
-        ...team,
-        finalScore: Number(weightedScore(team).toFixed(2)),
-      }))
-      .sort((a, b) => b.finalScore - a.finalScore);
-  }, []);
-const role =
-  (localStorage.getItem("role") as "admin" | "judge" | "student") ||
-  "student";
+  const role =
+    (localStorage.getItem("role") as "admin" | "judge" | "student") ||
+    "student";
+
   return (
     <AppLayout>
-      
+      <Sidebar active="dashboard" role={role} />
 
-    <Sidebar active="dashboard" role={role} />
       <main className="flex-1 space-y-6">
-        <PageHero active="dashboard" role={role} />
+        <PageHero
+          title="Welcome to the Hackathon"
+          subtitle="Your central hub for event updates, schedule, announcements, and quick links. Navigate to your role-specific view from the sidebar or tabs above."
+          active="dashboard"
+          role={role}
+        />
+
         <section className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-2xl backdrop-blur">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <StatCard
               icon={<Trophy className="h-5 w-5" />}
-              label="Leading Team"
-              value={rankedTeams[0].name}
-              detail={`${rankedTeams[0].finalScore} pts`}
+              label="Event Status"
+              value="In Progress"
+              detail="Development Phase 2"
             />
             <StatCard
               icon={<Users className="h-5 w-5" />}
@@ -150,28 +100,28 @@ const role =
           </div>
         </section>
 
-        <DashboardSection rankedTeams={rankedTeams} />
-
         <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
           <div className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-xl">
             <div className="mb-5 flex items-center gap-3">
-              <BookOpen className="h-5 w-5 text-[#FF2D6F]" />
+              <Rocket className="h-5 w-5 text-[#FF2D6F]" />
               <div>
-                <h3 className="text-2xl font-semibold">Clear Instructions</h3>
+                <h3 className="text-2xl font-semibold">Announcements</h3>
                 <p className="text-sm text-zinc-300">
-                  Simple guidance everyone can scan quickly during the
-                  presentation.
+                  Latest updates from the organizers.
                 </p>
               </div>
             </div>
             <div className="space-y-3">
-              {instructions.map((item) => (
+              {announcements.map((item) => (
                 <div
-                  key={item}
-                  className="flex gap-3 rounded-2xl border border-white/10 bg-[#1A1A1A] p-4"
+                  key={item.title}
+                  className="flex gap-4 rounded-2xl border border-white/10 bg-[#1A1A1A] p-4"
                 >
-                  <ChevronRight className="mt-0.5 h-4 w-4 text-[#FF2D6F]" />
-                  <p className="text-zinc-200">{item}</p>
+                  <div className="mt-0.5 text-[#FF2D6F]">{item.icon}</div>
+                  <div>
+                    <p className="font-medium text-white">{item.title}</p>
+                    <p className="mt-1 text-sm text-zinc-300">{item.detail}</p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -183,7 +133,7 @@ const role =
               <div>
                 <h3 className="text-2xl font-semibold">Event Timeline</h3>
                 <p className="text-sm text-zinc-300">
-                  A polished timeline block for the presentation demo.
+                  Today's schedule at a glance.
                 </p>
               </div>
             </div>
@@ -204,6 +154,66 @@ const role =
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+          <div className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-xl">
+            <div className="mb-5 flex items-center gap-3">
+              <Lightbulb className="h-5 w-5 text-[#FF2D6F]" />
+              <div>
+                <h3 className="text-2xl font-semibold">Quick Tips</h3>
+                <p className="text-sm text-zinc-300">
+                  Advice to make the most of the event.
+                </p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {quickTips.map((tip) => (
+                <div
+                  key={tip}
+                  className="flex gap-3 rounded-2xl border border-white/10 bg-[#1A1A1A] p-4"
+                >
+                  <ChevronRight className="mt-0.5 h-4 w-4 text-[#FF2D6F]" />
+                  <p className="text-zinc-200">{tip}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-xl">
+            <div className="mb-5 flex items-center gap-3">
+              <BookOpen className="h-5 w-5 text-[#FF2D6F]" />
+              <div>
+                <h3 className="text-2xl font-semibold">How It Works</h3>
+                <p className="text-sm text-zinc-300">
+                  Understanding the platform.
+                </p>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-white/10 bg-[#1A1A1A] p-4">
+                <p className="font-medium text-white">For Students</p>
+                <p className="mt-1 text-sm text-zinc-300">
+                  Track your milestones, request hints when stuck, and submit
+                  your project from the Student View.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-[#1A1A1A] p-4">
+                <p className="font-medium text-white">For Judges</p>
+                <p className="mt-1 text-sm text-zinc-300">
+                  Score teams across five categories, leave notes, and see the
+                  live leaderboard from the Judge View.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-[#1A1A1A] p-4">
+                <p className="font-medium text-white">For Admins</p>
+                <p className="mt-1 text-sm text-zinc-300">
+                  Full access to all views, team management, and platform
+                  oversight from the Admin panel.
+                </p>
+              </div>
             </div>
           </div>
         </section>
