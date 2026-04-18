@@ -14,6 +14,7 @@ import ServerRenderedFieldDef from "./adapters/ServerRenderedField";
 import TextInputDef from "./adapters/widgets/TextInput";
 import SelectDef from "./adapters/widgets/Select";
 import Login from "./views/Login";
+import CreateAccountView from "./views/CreateAccount";
 
 const config = new DjangoBridge.Config();
 
@@ -24,6 +25,7 @@ config.addView("Dashboard", DashboardView);
 config.addView("Judge", JudgeView);
 config.addView("Student", StudentView);
 config.addView("Admin", AdminView);
+config.addView("CreateAccount", CreateAccountView)
 
 // Add your context providers here
 config.addContextProvider("csrf_token", CSRFTokenContext);

@@ -1,4 +1,5 @@
 import SidebarButton from "./SidebarButton";
+import { apiFetch } from "../utils/api";
 import {
   Home,
   UserRoundCog,
@@ -7,6 +8,7 @@ import {
   BarChart3,
   Bell,
   ShieldCheck,
+  LogOut,
 } from "lucide-react";
 
 type ActiveView = "dashboard" | "judge" | "student" | "admin" | "none";
@@ -18,6 +20,25 @@ type Props = {
 };
 
 export default function Sidebar({ active, role }: Props) {
+  const handleSignOut = async () => {
+    try {
+      const response = await apiFetch("/api/users/logout/", {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        throw new Error("Logout failed");
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      localStorage.removeItem("role");
+      localStorage.removeItem("username");
+      localStorage.removeItem("full_name");
+      window.location.href = "/login/";
+    }
+  };
+
   return (
     <aside className="hidden w-72 shrink-0 rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-5 shadow-2xl backdrop-blur lg:block">
       <div className="mb-8">
@@ -80,6 +101,15 @@ export default function Sidebar({ active, role }: Props) {
             />
           </>
         )}
+
+        <div className="pt-3">
+          <SidebarButton
+            active={false}
+            icon={<LogOut className="h-4 w-4" />}
+            label="Sign Out"
+            onClick={handleSignOut}
+          />
+        </div>
       </nav>
 
       <div className="mt-8 rounded-2xl border border-[#FF2D6F]/20 bg-[#FF2D6F]/10 p-4">

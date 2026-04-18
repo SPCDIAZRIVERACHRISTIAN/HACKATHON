@@ -5,7 +5,13 @@ type StudentTask = {
   done: boolean;
 };
 
+type Team = {
+  id: number;
+  name: string;
+}
+
 export default function StudentSection({
+  teams,
   studentTaskFilter,
   setStudentTaskFilter,
   studentTasks,
@@ -14,6 +20,7 @@ export default function StudentSection({
   studentPenalty,
   adjustedStudentScore,
 }: {
+  teams: Team[];  
   studentTaskFilter: "all" | "done" | "pending";
   setStudentTaskFilter: (
     value: "all" | "done" | "pending"
@@ -38,7 +45,7 @@ export default function StudentSection({
             </p>
           </div>
           <span className="rounded-full bg-[#FF2D6F]/15 px-3 py-1 text-sm text-[#FF4D85]">
-            Team Nova
+            {teams[0]?.name || "No team"}
           </span>
         </div>
 

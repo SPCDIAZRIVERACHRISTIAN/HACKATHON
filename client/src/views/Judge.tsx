@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import PageHero from "../components/PageHero";
 import AppLayout from "../components/AppLayout";
 import Sidebar from "../components/Sidebar";
 import JudgeSection from "../components/JudgeSection";
 import StatCard from "../components/StatCard";
+import { apiFetch } from "../utils/api";
 import {
   Trophy,
   Users,
@@ -16,56 +17,25 @@ import {
   CircleDashed,
 } from "lucide-react";
 
-const teamsSeed = [
-  {
-    id: 1,
-    name: "Team Nova",
-    technical: 9,
-    creativity: 8,
-    impact: 9,
-    presentation: 7,
-    ux: 8,
-    progress: 92,
-    helpRequests: 1,
-    status: "Near submission",
-  },
-  {
-    id: 2,
-    name: "Team Orbit",
-    technical: 8,
-    creativity: 10,
-    impact: 8,
-    presentation: 8,
-    ux: 7,
-    progress: 87,
-    helpRequests: 0,
-    status: "Strong momentum",
-  },
-  {
-    id: 3,
-    name: "Team Pulse",
-    technical: 7,
-    creativity: 9,
-    impact: 7,
-    presentation: 9,
-    ux: 9,
-    progress: 79,
-    helpRequests: 2,
-    status: "Needs review",
-  },
-  {
-    id: 4,
-    name: "Team Cipher",
-    technical: 8,
-    creativity: 7,
-    impact: 8,
-    presentation: 7,
-    ux: 8,
-    progress: 73,
-    helpRequests: 1,
-    status: "On track",
-  },
-];
+type BackendTeam = {
+  id: number;
+  name: string;
+  project_name?: string;
+  score?: string | number;
+};
+
+type UiTeam = {
+  id: number;
+  name: string;
+  technical: number;
+  creativity: number;
+  impact: number;
+  presentation: number;
+  ux: number;
+  progress: number;
+  helpRequests: number;
+  status: string;
+};
 
 const weights = {
   technical: 0.3,
@@ -91,7 +61,7 @@ const timeline = [
   { label: "Judging + Awards", time: "3:00 PM onward", done: false },
 ];
 
-function weightedScore(team: (typeof teamsSeed)[number]) {
+function weightedScore(team: UiTeam) {
   return (
     team.technical * weights.technical +
     team.creativity * weights.creativity +
@@ -102,8 +72,26 @@ function weightedScore(team: (typeof teamsSeed)[number]) {
   );
 }
 
+function mapTeamToUi(team: BackendTeam): UiTeam {
+  const rawScore = Number(team.score ?? 0);
+
+  return {
+    id: team.id,
+    name: team.name,
+    technical: Math.max(Math.min(Math.round(rawScore) || 7, 10), 1),
+    creativity: 8,
+    impact: 8,
+    presentation: 8,
+    ux: 8,
+    progress: rawScore > 0 ? Math.min(rawScore * 10, 100) : 65,
+    helpRequests: 0,
+    status: team.project_name?.trim() ? "Project assigned" : "Awaiting project",
+  };
+}
+
 export default function JudgeView() {
-  const [selectedTeam, setSelectedTeam] = useState("Team Nova");
+  const [teams, setTeams] = useState<UiTeam[]>([]);
+  const [selectedTeam, setSelectedTeam] = useState("");
   const [scores, setScores] = useState({
     technical: 8,
     creativity: 8,
@@ -115,14 +103,36 @@ export default function JudgeView() {
     "Strong concept, polished UI, clear presentation."
   );
 
+  useEffect(() => {
+    const loadTeams = async () => {
+      try {
+        const response = await apiFetch("/api/teams/");
+        if (!response.ok) throw new Error("Failed to load teams");
+
+        const data = await response.json();
+        const normalized = Array.isArray(data) ? data.map(mapTeamToUi) : [];
+        setTeams(normalized);
+
+        if (normalized.length > 0) {
+          setSelectedTeam(normalized[0].name);
+        }
+      } catch (error) {
+        console.error("Error loading teams:", error);
+        setTeams([]);
+      }
+    };
+
+    loadTeams();
+  }, []);
+
   const rankedTeams = useMemo(() => {
-    return [...teamsSeed]
+    return [...teams]
       .map((team) => ({
         ...team,
         finalScore: Number(weightedScore(team).toFixed(2)),
       }))
       .sort((a, b) => b.finalScore - a.finalScore);
-  }, []);
+  }, [teams]);
 
   const judgePreviewScore = useMemo(() => {
     const raw =
@@ -133,15 +143,16 @@ export default function JudgeView() {
       scores.ux * weights.ux;
     return raw.toFixed(2);
   }, [scores]);
-const role =
-  (localStorage.getItem("role") as "admin" | "judge" | "student") ||
-  "judge";
+
+  const role =
+    (localStorage.getItem("role") as "admin" | "judge" | "student") ||
+    "judge";
+
   return (
     <AppLayout>
       <Sidebar active="judge" role={role} />
 
       <main className="flex-1 space-y-6">
-       
         <PageHero title="University Hackathon Judge Portal" active="judge" role={role} />
 
         <section className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-2xl backdrop-blur">
@@ -149,26 +160,26 @@ const role =
             <StatCard
               icon={<Trophy className="h-5 w-5" />}
               label="Leading Team"
-              value={rankedTeams[0].name}
-              detail={`${rankedTeams[0].finalScore} pts`}
+              value={rankedTeams[0]?.name || "No teams yet"}
+              detail={rankedTeams[0] ? `${rankedTeams[0].finalScore} pts` : "Waiting for data"}
             />
             <StatCard
               icon={<Users className="h-5 w-5" />}
               label="Active Teams"
-              value="12"
-              detail="4 currently featured"
+              value={String(teams.length)}
+              detail="Live from database"
             />
             <StatCard
               icon={<ClipboardList className="h-5 w-5" />}
               label="Judge Accounts"
               value="5"
-              detail="3 faculty + 2 guests"
+              detail="Static for now"
             />
             <StatCard
               icon={<Gauge className="h-5 w-5" />}
               label="Live Submissions"
-              value="9"
-              detail="Updates synced in real time"
+              value={String(teams.filter((team) => team.progress > 0).length)}
+              detail="Derived from team records"
             />
           </div>
         </section>
@@ -176,7 +187,7 @@ const role =
         <JudgeSection
           selectedTeam={selectedTeam}
           setSelectedTeam={setSelectedTeam}
-          teamsSeed={teamsSeed}
+          teamsSeed={teams}
           scores={scores}
           setScores={setScores}
           judgePreviewScore={judgePreviewScore}

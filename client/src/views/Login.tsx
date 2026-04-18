@@ -3,11 +3,71 @@ import { LockKeyhole, UserRound, ShieldCheck } from "lucide-react";
 import AppLayout from "../components/AppLayout";
 import diLogoUrl from "../assets/di-logo.png";
 import itapLogoUrl from "../assets/itap-logo.png";
+import { apiFetch } from "../utils/api";
+
+type Role = "admin" | "judge" | "student";
 
 export default function Login() {
-  const [selectedRole, setSelectedRole] = useState<
-    "admin" | "judge" | "student"
-  >("admin");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setErrorMessage("");
+
+    if (!username.trim() || !password) {
+      setErrorMessage("Please enter your username and password.");
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const response = await apiFetch("/api/users/login/", {
+        method: "POST",
+        body: JSON.stringify({
+          username: username.trim(),
+          password,
+        }),
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error || data?.message || "Login failed. Please try again."
+        );
+      }
+
+      const backendRole: Role | undefined = data?.user?.role;
+
+      if (!backendRole) {
+        throw new Error("Login succeeded but no user role was returned.");
+      }
+
+      localStorage.setItem("role", backendRole);
+      localStorage.setItem("username", data.user.username);
+      localStorage.setItem("full_name", data.user.full_name || "");
+
+      if (backendRole === "admin") {
+        window.location.href = "/dashboard/";
+      } else if (backendRole === "judge") {
+        window.location.href = "/judge/";
+      } else {
+        window.location.href = "/student/";
+      }
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong during login."
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <AppLayout>
@@ -36,9 +96,8 @@ export default function Login() {
             </h1>
 
             <p className="mt-4 max-w-2xl leading-7 text-zinc-300">
-              This login page will connect later to your real Django users and
-              database. For now, we are preparing the interface and access flow
-              for admins, judges, and students.
+              Sign in with your assigned username and password. Your destination
+              is determined automatically by your backend role.
             </p>
 
             <div className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -54,7 +113,7 @@ export default function Login() {
                 <LockKeyhole className="mb-3 h-5 w-5 text-[#FF2D6F]" />
                 <h2 className="font-semibold text-white">Judge</h2>
                 <p className="mt-2 text-sm text-zinc-300">
-                  Access dashboard and judging workflow.
+                  Access judging workflow and review tools.
                 </p>
               </div>
 
@@ -62,7 +121,7 @@ export default function Login() {
                 <UserRound className="mb-3 h-5 w-5 text-[#FF2D6F]" />
                 <h2 className="font-semibold text-white">Student</h2>
                 <p className="mt-2 text-sm text-zinc-300">
-                  Access dashboard and student workspace.
+                  Access team workspace and student portal.
                 </p>
               </div>
             </div>
@@ -77,14 +136,16 @@ export default function Login() {
               Use your assigned credentials to enter the platform.
             </p>
 
-            <form className="mt-8 space-y-5">
+            <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
               <div>
                 <label className="mb-2 block text-sm font-medium text-zinc-200">
-                  Email or Username
+                  Username
                 </label>
                 <input
                   type="text"
                   placeholder="Enter your username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   className="w-full rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 text-white outline-none transition placeholder:text-zinc-500 focus:border-[#FF2D6F]"
                 />
               </div>
@@ -96,57 +157,46 @@ export default function Login() {
                 <input
                   type="password"
                   placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="w-full rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 text-white outline-none transition placeholder:text-zinc-500 focus:border-[#FF2D6F]"
                 />
               </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-medium text-zinc-200">
-                  Role Preview
-                </label>
-
-                <div className="grid grid-cols-3 gap-2 rounded-2xl bg-[#111111] p-2">
-                  {(["admin", "judge", "student"] as const).map((role) => (
-                    <button
-                      key={role}
-                      type="button"
-                      onClick={() => setSelectedRole(role)}
-                      className={`rounded-xl px-4 py-3 text-sm font-medium capitalize transition ${
-                        selectedRole === role
-                          ? "bg-[#FF2D6F] text-white shadow-[0_0_20px_rgba(255,45,111,0.35)]"
-                          : "bg-transparent text-zinc-200 hover:bg-white/10"
-                      }`}
-                    >
-                      {role}
-                    </button>
-                  ))}
+              {errorMessage && (
+                <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4">
+                  <p className="text-sm text-red-300">{errorMessage}</p>
                 </div>
-              </div>
+              )}
 
               <button
-                type="button"
-                onClick={() => {
-  localStorage.setItem("role", selectedRole);
-
-  if (selectedRole === "admin") {
-    window.location.href = "/dashboard/";
-  } else if (selectedRole === "judge") {
-    window.location.href = "/judge/";
-  } else {
-    window.location.href = "/student/";
-  }
-}}
-                className="w-full rounded-2xl bg-[#FF2D6F] px-5 py-3 font-medium text-white transition hover:scale-[1.01]"
+                type="submit"
+                disabled={submitting}
+                className="w-full rounded-2xl bg-[#FF2D6F] px-5 py-3 font-medium text-white transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-70"
               >
-                Sign In
+                {submitting ? "Signing In..." : "Sign In"}
               </button>
             </form>
 
             <div className="mt-6 rounded-2xl border border-white/10 bg-[#151515] p-4">
               <p className="text-sm text-zinc-300">
-                Temporary note: authentication is not connected yet. This page
-                is currently a frontend mockup ready to connect to the real user
-                system later.
+                Access is determined by the authenticated user role from the
+                backend, not by a frontend selector.
+              </p>
+            </div>
+
+            <div className="mt-6 text-center">
+              <p className="text-sm text-zinc-300">
+                Don&apos;t have an account?{" "}
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.location.href = "/create-account/";
+                  }}
+                  className="font-medium text-[#FF2D6F] transition hover:text-[#ff5a8f]"
+                >
+                  Sign up here
+                </button>
               </p>
             </div>
           </div>

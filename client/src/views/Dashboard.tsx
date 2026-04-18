@@ -1,9 +1,10 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import PageHero from "../components/PageHero";
 import AppLayout from "../components/AppLayout";
 import DashboardSection from "../components/DashboardSection";
 import Sidebar from "../components/Sidebar";
 import StatCard from "../components/StatCard";
+import { apiFetch } from "../utils/api";
 import {
   Trophy,
   Users,
@@ -16,63 +17,24 @@ import {
   CircleDashed,
 } from "lucide-react";
 
-const teamsSeed = [
-  {
-    id: 1,
-    name: "Team Nova",
-    technical: 9,
-    creativity: 8,
-    impact: 9,
-    presentation: 7,
-    ux: 8,
-    progress: 92,
-    helpRequests: 1,
-    status: "Near submission",
-  },
-  {
-    id: 2,
-    name: "Team Orbit",
-    technical: 8,
-    creativity: 10,
-    impact: 8,
-    presentation: 8,
-    ux: 7,
-    progress: 87,
-    helpRequests: 0,
-    status: "Strong momentum",
-  },
-  {
-    id: 3,
-    name: "Team Pulse",
-    technical: 7,
-    creativity: 9,
-    impact: 7,
-    presentation: 9,
-    ux: 9,
-    progress: 79,
-    helpRequests: 2,
-    status: "Needs review",
-  },
-  {
-    id: 4,
-    name: "Team Cipher",
-    technical: 8,
-    creativity: 7,
-    impact: 8,
-    presentation: 7,
-    ux: 8,
-    progress: 73,
-    helpRequests: 1,
-    status: "On track",
-  },
-];
+type BackendTeam = {
+  id: number;
+  name: string;
+  project_name?: string;
+  score?: string | number;
+};
 
-const weights = {
-  technical: 0.3,
-  creativity: 0.25,
-  impact: 0.2,
-  presentation: 0.15,
-  ux: 0.1,
+type UiTeam = {
+  id: number;
+  name: string;
+  technical: number;
+  creativity: number;
+  impact: number;
+  presentation: number;
+  ux: number;
+  progress: number;
+  helpRequests: number;
+  status: string;
 };
 
 const instructions = [
@@ -91,7 +53,15 @@ const timeline = [
   { label: "Judging + Awards", time: "3:00 PM onward", done: false },
 ];
 
-function weightedScore(team: (typeof teamsSeed)[number]) {
+const weights = {
+  technical: 0.3,
+  creativity: 0.25,
+  impact: 0.2,
+  presentation: 0.15,
+  ux: 0.1,
+};
+
+function weightedScore(team: UiTeam) {
   return (
     team.technical * weights.technical +
     team.creativity * weights.creativity +
@@ -102,50 +72,89 @@ function weightedScore(team: (typeof teamsSeed)[number]) {
   );
 }
 
+function mapTeamToUi(team: BackendTeam): UiTeam {
+  const rawScore = Number(team.score ?? 0);
+
+  return {
+    id: team.id,
+    name: team.name,
+    technical: Math.max(Math.min(Math.round(rawScore) || 7, 10), 1),
+    creativity: 8,
+    impact: 8,
+    presentation: 8,
+    ux: 8,
+    progress: rawScore > 0 ? Math.min(rawScore * 10, 100) : 65,
+    helpRequests: 0,
+    status: team.project_name?.trim() ? "Project assigned" : "Awaiting project",
+  };
+}
+
 export default function DashboardView() {
+  const [teams, setTeams] = useState<UiTeam[]>([]);
+  const role =
+    (localStorage.getItem("role") as "admin" | "judge" | "student") ||
+    "student";
+
+  useEffect(() => {
+    const loadTeams = async () => {
+      try {
+        const response = await apiFetch("/api/teams/");
+        if (!response.ok) throw new Error("Failed to load teams");
+
+        const data = await response.json();
+        const normalized = Array.isArray(data) ? data.map(mapTeamToUi) : [];
+        setTeams(normalized);
+      } catch (error) {
+        console.error("Error loading teams:", error);
+        setTeams([]);
+      }
+    };
+
+    loadTeams();
+  }, []);
+
   const rankedTeams = useMemo(() => {
-    return [...teamsSeed]
+    return [...teams]
       .map((team) => ({
         ...team,
         finalScore: Number(weightedScore(team).toFixed(2)),
       }))
       .sort((a, b) => b.finalScore - a.finalScore);
-  }, []);
-const role =
-  (localStorage.getItem("role") as "admin" | "judge" | "student") ||
-  "student";
+  }, [teams]);
+
+  const leadingTeam = rankedTeams[0];
+
   return (
     <AppLayout>
-      
-
-    <Sidebar active="dashboard" role={role} />
+      <Sidebar active="dashboard" role={role} />
       <main className="flex-1 space-y-6">
         <PageHero active="dashboard" role={role} />
+
         <section className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-2xl backdrop-blur">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <StatCard
               icon={<Trophy className="h-5 w-5" />}
               label="Leading Team"
-              value={rankedTeams[0].name}
-              detail={`${rankedTeams[0].finalScore} pts`}
+              value={leadingTeam?.name || "No teams yet"}
+              detail={leadingTeam ? `${leadingTeam.finalScore} pts` : "Waiting for data"}
             />
             <StatCard
               icon={<Users className="h-5 w-5" />}
               label="Active Teams"
-              value="12"
-              detail="4 currently featured"
+              value={String(teams.length)}
+              detail="Live from database"
             />
             <StatCard
               icon={<ClipboardList className="h-5 w-5" />}
               label="Judge Accounts"
               value="5"
-              detail="3 faculty + 2 guests"
+              detail="Static for now"
             />
             <StatCard
               icon={<Gauge className="h-5 w-5" />}
               label="Live Submissions"
-              value="9"
-              detail="Updates synced in real time"
+              value={String(teams.filter((team) => team.progress > 0).length)}
+              detail="Derived from team records"
             />
           </div>
         </section>
