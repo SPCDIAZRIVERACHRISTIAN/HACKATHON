@@ -233,6 +233,7 @@ def login_user(request):
                     "username": user.username,
                     "role": user.role,
                     "team_id": user.team_id,
+                    "team_name": user.team.name if user.team else None,
                     "full_name": user.full_name,
                     "must_change_password": user.must_change_password,
                 },

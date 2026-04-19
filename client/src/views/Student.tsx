@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import PageHero from "../components/PageHero";
 import AppLayout from "../components/AppLayout";
 import Sidebar from "../components/Sidebar";
@@ -20,31 +20,31 @@ import {
   Terminal,
   Copy,
   Check,
+  Clock,
+  UserCheck,
 } from "lucide-react";
 
-const teamsSeed = [
-  { id: 1, name: "Team Nova", technical: 9, creativity: 8, impact: 9, presentation: 7, ux: 8, progress: 92, helpRequests: 1, status: "Near submission" },
-  { id: 2, name: "Team Orbit", technical: 8, creativity: 10, impact: 8, presentation: 8, ux: 7, progress: 87, helpRequests: 0, status: "Strong momentum" },
-  { id: 3, name: "Team Pulse", technical: 7, creativity: 9, impact: 7, presentation: 9, ux: 9, progress: 79, helpRequests: 2, status: "Needs review" },
-  { id: 4, name: "Team Cipher", technical: 8, creativity: 7, impact: 8, presentation: 7, ux: 8, progress: 73, helpRequests: 1, status: "On track" },
-];
+type TimelineEvent = {
+  id: number;
+  label: string;
+  start_time: string;
+  end_time: string | null;
+  order: number;
+};
 
-const weights = { technical: 0.3, creativity: 0.25, impact: 0.2, presentation: 0.15, ux: 0.1 };
+type Team = {
+  id: number;
+  name: string;
+  project_name: string;
+  mentor_name: string;
+  score: string;
+};
 
 const instructions = [
   "Choose a challenge track and define the problem clearly.",
   "Build a polished demo-first interface that can be shown live.",
-  "Upload progress checkpoints so judges can review live updates.",
+  "Coordinate with your team using Git branches and pull requests.",
   "Present a simple story: problem, solution, impact, and user experience.",
-];
-
-const timeline = [
-  { label: "Kickoff", time: "7:30 AM - 8:00 AM", done: true },
-  { label: "Ideation + Development", time: "8:00 AM - 11:30 AM", done: true },
-  { label: "Lunch Break", time: "11:30 AM - 12:30 PM", done: true },
-  { label: "Development Phase 2", time: "12:30 PM - 2:45 PM", done: false },
-  { label: "Wrap-Up + Submissions", time: "2:45 PM - 3:00 PM", done: false },
-  { label: "Judging + Awards", time: "3:00 PM onward", done: false },
 ];
 
 const gitSetupSteps = [
@@ -66,11 +66,11 @@ const gitSetupSteps = [
   {
     title: "4. Install dependencies & start coding",
     command: "npm install  (or pip install -r requirements.txt)",
-    description: "Install whatever your chosen tech stack needs, then start building your flashcard app.",
+    description: "Install whatever your chosen tech stack needs, then start building your project.",
   },
   {
     title: "5. Stage and commit your work",
-    command: "git add .  &&  git commit -m \"your message\"",
+    command: 'git add .  &&  git commit -m "your message"',
     description: "Save your progress frequently with clear commit messages describing what you did.",
   },
   {
@@ -85,8 +85,8 @@ const gitSetupSteps = [
   },
   {
     title: "8. Open a Pull Request",
-    command: "Go to GitHub → Pull Requests → New",
-    description: "When ready to submit, create a PR to merge your branch into main for final review.",
+    command: "Go to GitHub -> Pull Requests -> New",
+    description: "When ready, create a PR to merge your branch into main for final review.",
   },
 ];
 
@@ -96,7 +96,7 @@ const gitCommands = [
   { command: "git status", category: "basics", description: "Show which files have been changed, staged, or are untracked" },
   { command: "git add <file>", category: "basics", description: "Stage a specific file for the next commit" },
   { command: "git add .", category: "basics", description: "Stage all changed files at once" },
-  { command: "git commit -m \"message\"", category: "basics", description: "Save staged changes with a description" },
+  { command: 'git commit -m "message"', category: "basics", description: "Save staged changes with a description" },
   { command: "git log --oneline", category: "basics", description: "View a compact list of recent commits" },
   { command: "git diff", category: "basics", description: "Show what changed in your files since the last commit" },
   { command: "git branch", category: "branching", description: "List all local branches (current one has a *)" },
@@ -114,15 +114,32 @@ const gitCommands = [
   { command: "git checkout -- <file>", category: "extras", description: "Discard changes in a file (revert to last commit)" },
 ];
 
-function weightedScore(team: (typeof teamsSeed)[number]) {
-  return (
-    team.technical * weights.technical +
-    team.creativity * weights.creativity +
-    team.impact * weights.impact +
-    team.presentation * weights.presentation +
-    team.ux * weights.ux -
-    team.helpRequests * 0.15
-  );
+function formatTime(iso: string) {
+  return new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
+function isEventDone(event: TimelineEvent, now: Date) {
+  if (event.end_time) return now >= new Date(event.end_time);
+  return false;
+}
+
+function isEventActive(event: TimelineEvent, now: Date) {
+  const start = new Date(event.start_time);
+  const end = event.end_time ? new Date(event.end_time) : null;
+  return now >= start && (!end || now < end);
+}
+
+function getTimeRemaining(event: TimelineEvent, now: Date) {
+  const end = event.end_time ? new Date(event.end_time) : null;
+  if (!end) return null;
+  const diff = end.getTime() - now.getTime();
+  if (diff <= 0) return null;
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  if (h > 0) return `${h}h ${m}m remaining`;
+  if (m > 0) return `${m}m ${s}s remaining`;
+  return `${s}s remaining`;
 }
 
 function CopyCmd({ text }: { text: string }) {
@@ -148,12 +165,34 @@ export default function StudentView() {
   const [activeStudentTab, setActiveStudentTab] = useState<"overview" | "git-guide" | "git-commands">("overview");
   const [gitSearch, setGitSearch] = useState("");
   const [gitCategoryFilter, setGitCategoryFilter] = useState<string>("all");
+  const [events, setEvents] = useState<TimelineEvent[]>([]);
+  const [now, setNow] = useState(new Date());
+  const [myTeam, setMyTeam] = useState<Team | null>(null);
 
-  const rankedTeams = useMemo(() => {
-    return [...teamsSeed]
-      .map((team) => ({ ...team, finalScore: Number(weightedScore(team).toFixed(2)) }))
-      .sort((a, b) => b.finalScore - a.finalScore);
+  useEffect(() => {
+    fetch("/api/team/events/")
+      .then((r) => r.json())
+      .then(setEvents)
+      .catch(() => {});
+
+    const teamName = localStorage.getItem("teamName");
+    fetch("/api/team/teams/")
+      .then((r) => r.json())
+      .then((teams: Team[]) => {
+        if (teamName) {
+          const found = teams.find((t) => t.name === teamName);
+          if (found) setMyTeam(found);
+        }
+      })
+      .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const activeEvent = events.find((e) => isEventActive(e, now));
 
   const studentPenalty = tipCount * 2;
   const adjustedStudentScore = Math.max(88 - studentPenalty, 0);
@@ -194,10 +233,30 @@ export default function StudentView() {
         {/* Stat Cards */}
         <section className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-2xl backdrop-blur">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <StatCard icon={<Trophy className="h-5 w-5" />} label="Leading Team" value={rankedTeams[0].name} detail={`${rankedTeams[0].finalScore} pts`} />
-            <StatCard icon={<Users className="h-5 w-5" />} label="Active Teams" value="12" detail="4 currently featured" />
-            <StatCard icon={<ClipboardList className="h-5 w-5" />} label="Judge Accounts" value="5" detail="3 faculty + 2 guests" />
-            <StatCard icon={<Gauge className="h-5 w-5" />} label="Live Submissions" value="9" detail="Updates synced in real time" />
+            <StatCard
+              icon={<Clock className="h-5 w-5" />}
+              label="Current Phase"
+              value={activeEvent?.label || "Waiting"}
+              detail={activeEvent ? getTimeRemaining(activeEvent, now) || "In progress" : "No active phase"}
+            />
+            <StatCard
+              icon={<UserCheck className="h-5 w-5" />}
+              label="Your Mentor"
+              value={myTeam?.mentor_name || "Not assigned"}
+              detail={myTeam ? `Team: ${myTeam.name}` : "Team not found"}
+            />
+            <StatCard
+              icon={<Trophy className="h-5 w-5" />}
+              label="Timeline Progress"
+              value={`${events.filter((e) => isEventDone(e, now)).length}/${events.length}`}
+              detail="Phases completed"
+            />
+            <StatCard
+              icon={<Gauge className="h-5 w-5" />}
+              label="Current Time"
+              value={now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" })}
+              detail={now.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })}
+            />
           </div>
         </section>
 
@@ -235,7 +294,7 @@ export default function StudentView() {
               adjustedStudentScore={adjustedStudentScore}
             />
 
-            <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+            <section className="grid gap-6 lg:grid-cols-2">
               <div className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-xl">
                 <div className="mb-5 flex items-center gap-3">
                   <BookOpen className="h-5 w-5 text-[#FF2D6F]" />
@@ -259,24 +318,51 @@ export default function StudentView() {
                   <TimerReset className="h-5 w-5 text-[#FF2D6F]" />
                   <div>
                     <h3 className="text-2xl font-semibold">Event Timeline</h3>
-                    <p className="text-sm text-zinc-300">Today's schedule at a glance.</p>
+                    <p className="text-sm text-zinc-300">Today's schedule — updates live.</p>
                   </div>
                 </div>
-                <div className="space-y-3">
-                  {timeline.map((step) => (
-                    <div key={step.label} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-[#1A1A1A] p-4">
-                      {step.done ? (
-                        <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-300" />
-                      ) : (
-                        <CircleDashed className="mt-0.5 h-5 w-5 text-zinc-400" />
-                      )}
-                      <div>
-                        <div className="font-medium">{step.label}</div>
-                        <div className="text-sm text-zinc-400">{step.time}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {events.length === 0 ? (
+                  <p className="py-8 text-center text-zinc-500">No events scheduled yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {events.map((event) => {
+                      const done = isEventDone(event, now);
+                      const active = isEventActive(event, now);
+                      const remaining = active ? getTimeRemaining(event, now) : null;
+                      return (
+                        <div
+                          key={event.id}
+                          className={`flex items-start gap-3 rounded-2xl border p-4 transition ${
+                            active
+                              ? "border-[#FF2D6F]/40 bg-[#FF2D6F]/5"
+                              : "border-white/10 bg-[#1A1A1A]"
+                          }`}
+                        >
+                          {done ? (
+                            <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-300" />
+                          ) : active ? (
+                            <div className="mt-0.5 h-5 w-5 animate-pulse rounded-full border-2 border-[#FF2D6F] bg-[#FF2D6F]/20" />
+                          ) : (
+                            <CircleDashed className="mt-0.5 h-5 w-5 text-zinc-400" />
+                          )}
+                          <div className="flex-1">
+                            <div className={`font-medium ${active ? "text-[#FF2D6F]" : ""}`}>
+                              {event.label}
+                              {active && <span className="ml-2 text-xs text-[#FF2D6F]/70">NOW</span>}
+                            </div>
+                            <div className="text-sm text-zinc-400">
+                              {formatTime(event.start_time)}
+                              {event.end_time ? ` - ${formatTime(event.end_time)}` : " onward"}
+                            </div>
+                            {remaining && (
+                              <div className="mt-1 text-xs font-medium text-[#FF2D6F]">{remaining}</div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </section>
           </>
@@ -296,7 +382,6 @@ export default function StudentView() {
                 </div>
               </div>
 
-              {/* Quick Tips */}
               <div className="mb-6 rounded-2xl border border-[#FF2D6F]/20 bg-[#FF2D6F]/5 p-5">
                 <h4 className="mb-3 font-semibold text-[#FF4D85]">Team Collaboration Tips</h4>
                 <ul className="space-y-2 text-sm text-zinc-200">
@@ -308,7 +393,6 @@ export default function StudentView() {
                 </ul>
               </div>
 
-              {/* Step-by-step */}
               <div className="space-y-4">
                 {gitSetupSteps.map((step) => (
                   <div key={step.title} className="rounded-2xl border border-white/10 bg-[#1A1A1A] p-5">
@@ -323,7 +407,6 @@ export default function StudentView() {
               </div>
             </div>
 
-            {/* Documentation Links */}
             <div className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-xl">
               <div className="mb-5 flex items-center gap-3">
                 <BookOpen className="h-5 w-5 text-[#FF2D6F]" />
@@ -333,60 +416,32 @@ export default function StudentView() {
                 </div>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <a
-                  href="https://docs.github.com/en/get-started"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#1A1A1A] p-4 transition hover:border-[#FF2D6F]/30 hover:bg-[#1A1A1A]/80"
-                >
-                  <div className="rounded-xl bg-[#FF2D6F]/15 p-2.5 text-[#FF2D6F]">
-                    <GitBranch className="h-5 w-5" />
-                  </div>
+                <a href="https://docs.github.com/en/get-started" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#1A1A1A] p-4 transition hover:border-[#FF2D6F]/30 hover:bg-[#1A1A1A]/80">
+                  <div className="rounded-xl bg-[#FF2D6F]/15 p-2.5 text-[#FF2D6F]"><GitBranch className="h-5 w-5" /></div>
                   <div className="flex-1">
                     <p className="font-medium text-white">GitHub Docs — Get Started</p>
                     <p className="text-xs text-zinc-400">Account setup, repos, and collaboration basics</p>
                   </div>
                   <ExternalLink className="h-4 w-4 text-zinc-500" />
                 </a>
-                <a
-                  href="https://git-scm.com/doc"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#1A1A1A] p-4 transition hover:border-[#FF2D6F]/30 hover:bg-[#1A1A1A]/80"
-                >
-                  <div className="rounded-xl bg-[#FF2D6F]/15 p-2.5 text-[#FF2D6F]">
-                    <Terminal className="h-5 w-5" />
-                  </div>
+                <a href="https://git-scm.com/doc" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#1A1A1A] p-4 transition hover:border-[#FF2D6F]/30 hover:bg-[#1A1A1A]/80">
+                  <div className="rounded-xl bg-[#FF2D6F]/15 p-2.5 text-[#FF2D6F]"><Terminal className="h-5 w-5" /></div>
                   <div className="flex-1">
                     <p className="font-medium text-white">Git Official Documentation</p>
                     <p className="text-xs text-zinc-400">Full reference for all Git commands</p>
                   </div>
                   <ExternalLink className="h-4 w-4 text-zinc-500" />
                 </a>
-                <a
-                  href="https://education.github.com/git-cheat-sheet-education.pdf"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#1A1A1A] p-4 transition hover:border-[#FF2D6F]/30 hover:bg-[#1A1A1A]/80"
-                >
-                  <div className="rounded-xl bg-[#FF2D6F]/15 p-2.5 text-[#FF2D6F]">
-                    <ClipboardList className="h-5 w-5" />
-                  </div>
+                <a href="https://education.github.com/git-cheat-sheet-education.pdf" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#1A1A1A] p-4 transition hover:border-[#FF2D6F]/30 hover:bg-[#1A1A1A]/80">
+                  <div className="rounded-xl bg-[#FF2D6F]/15 p-2.5 text-[#FF2D6F]"><ClipboardList className="h-5 w-5" /></div>
                   <div className="flex-1">
                     <p className="font-medium text-white">Git Cheat Sheet (PDF)</p>
                     <p className="text-xs text-zinc-400">Printable quick reference from GitHub Education</p>
                   </div>
                   <ExternalLink className="h-4 w-4 text-zinc-500" />
                 </a>
-                <a
-                  href="https://docs.github.com/en/pull-requests/collaborating-with-pull-requests"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#1A1A1A] p-4 transition hover:border-[#FF2D6F]/30 hover:bg-[#1A1A1A]/80"
-                >
-                  <div className="rounded-xl bg-[#FF2D6F]/15 p-2.5 text-[#FF2D6F]">
-                    <Users className="h-5 w-5" />
-                  </div>
+                <a href="https://docs.github.com/en/pull-requests/collaborating-with-pull-requests" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#1A1A1A] p-4 transition hover:border-[#FF2D6F]/30 hover:bg-[#1A1A1A]/80">
+                  <div className="rounded-xl bg-[#FF2D6F]/15 p-2.5 text-[#FF2D6F]"><Users className="h-5 w-5" /></div>
                   <div className="flex-1">
                     <p className="font-medium text-white">Pull Requests Guide</p>
                     <p className="text-xs text-zinc-400">How to collaborate using PRs on GitHub</p>
@@ -409,7 +464,6 @@ export default function StudentView() {
               </div>
             </div>
 
-            {/* Search + Filter */}
             <div className="mb-5 flex flex-col gap-3 sm:flex-row">
               <div className="flex flex-1 items-center gap-2 rounded-xl border border-white/10 bg-[#1A1A1A] px-4 py-2.5">
                 <Search className="h-4 w-4 text-zinc-400" />
@@ -445,7 +499,6 @@ export default function StudentView() {
               </div>
             </div>
 
-            {/* Commands List */}
             {filteredCommands.length === 0 ? (
               <p className="py-8 text-center text-zinc-500">No commands match your search.</p>
             ) : (

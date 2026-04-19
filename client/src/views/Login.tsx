@@ -18,6 +18,7 @@ export default function Login() {
     role: string;
     username: string;
     full_name: string;
+    team_name: string;
   } | null>(null);
 
   const handleLogin = async () => {
@@ -55,6 +56,7 @@ export default function Login() {
       localStorage.setItem("role", data.user.role);
       localStorage.setItem("username", data.user.username);
       localStorage.setItem("fullName", data.user.full_name || "");
+      localStorage.setItem("teamName", data.user.team_name || "");
       window.location.href = "/dashboard/";
     } catch {
       setError("Unable to connect to the server.");
@@ -96,6 +98,7 @@ export default function Login() {
         localStorage.setItem("role", pendingUser.role);
         localStorage.setItem("username", pendingUser.username);
         localStorage.setItem("fullName", pendingUser.full_name || "");
+        localStorage.setItem("teamName", pendingUser.team_name || "");
       }
       window.location.href = "/dashboard/";
     } catch {
