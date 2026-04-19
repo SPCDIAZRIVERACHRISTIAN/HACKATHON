@@ -1,15 +1,19 @@
+import { useState } from "react";
 import SidebarButton from "./SidebarButton";
 import {
-  Home,
+  Home as HomeIcon,
+  LayoutDashboard,
   UserRoundCog,
   GraduationCap,
   ClipboardList,
   BarChart3,
-  Bell,
   ShieldCheck,
+  LogOut,
+  Menu,
+  X,
 } from "lucide-react";
 
-type ActiveView = "dashboard" | "judge" | "student" | "admin" | "none";
+type ActiveView = "dashboard" | "judge" | "student" | "admin" | "home" | "none";
 type UserRole = "admin" | "judge" | "student";
 
 type Props = {
@@ -18,82 +22,149 @@ type Props = {
 };
 
 export default function Sidebar({ active, role }: Props) {
-  return (
-    <aside className="hidden w-72 shrink-0 rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-5 shadow-2xl backdrop-blur lg:block">
-      <div className="mb-8">
-        <p className="text-xs uppercase tracking-[0.35em] text-[#FF2D6F]">
-          Disruptive Innovation
-        </p>
-        <h1 className="mt-3 text-2xl font-bold">
-          ITAP Hackathon Control Center
-        </h1>
-        <p className="mt-2 text-sm text-zinc-400">
-          Demo-ready workspace for judges, students, and admins.
-        </p>
-      </div>
+  const [isOpen, setIsOpen] = useState(false);
 
-      <nav className="space-y-2">
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/users/logout/", { method: "POST" });
+    } catch {
+      // continue with client-side cleanup even if request fails
+    }
+    localStorage.removeItem("role");
+    localStorage.removeItem("username");
+    localStorage.removeItem("fullName");
+    localStorage.removeItem("teamName");
+    window.location.href = "/";
+  };
+
+  const navItems = (
+    <>
+      <SidebarButton
+        active={active === "home"}
+        icon={<HomeIcon className="h-4 w-4" />}
+        label="Home"
+        onClick={() => (window.location.href = "/")}
+      />
+
+      <SidebarButton
+        active={active === "dashboard"}
+        icon={<LayoutDashboard className="h-4 w-4" />}
+        label="Dashboard"
+        onClick={() => (window.location.href = "/dashboard/")}
+      />
+
+      {(role === "admin" || role === "judge") && (
         <SidebarButton
-          active={active === "dashboard"}
-          icon={<Home className="h-4 w-4" />}
-          label="Dashboard"
-          onClick={() => (window.location.href = "/dashboard/")}
+          active={active === "judge"}
+          icon={<UserRoundCog className="h-4 w-4" />}
+          label="Judge"
+          onClick={() => (window.location.href = "/judge/")}
         />
+      )}
 
-        {(role === "admin" || role === "judge") && (
+      {(role === "admin" || role === "student") && (
+        <SidebarButton
+          active={active === "student"}
+          icon={<GraduationCap className="h-4 w-4" />}
+          label="Student"
+          onClick={() => (window.location.href = "/student/")}
+        />
+      )}
+
+      {role === "admin" && (
+        <>
           <SidebarButton
-            active={active === "judge"}
-            icon={<UserRoundCog className="h-4 w-4" />}
-            label="Judge View"
-            onClick={() => (window.location.href = "/judge/")}
+            active={active === "admin"}
+            icon={<ShieldCheck className="h-4 w-4" />}
+            label="Admin"
+            onClick={() => (window.location.href = "/admin-panel/")}
           />
-        )}
-
-        {(role === "admin" || role === "student") && (
           <SidebarButton
-            active={active === "student"}
-            icon={<GraduationCap className="h-4 w-4" />}
-            label="Student View"
-            onClick={() => (window.location.href = "/student/")}
+            active={false}
+            icon={<ClipboardList className="h-4 w-4" />}
+            label="Submissions"
+            onClick={() => {}}
           />
-        )}
+          <SidebarButton
+            active={false}
+            icon={<BarChart3 className="h-4 w-4" />}
+            label="Analytics"
+            onClick={() => {}}
+          />
+        </>
+      )}
+    </>
+  );
 
-        {role === "admin" && (
-          <>
-            <SidebarButton
-              active={active === "admin"}
-              icon={<ShieldCheck className="h-4 w-4" />}
-              label="Admin View"
-              onClick={() => (window.location.href = "/admin-panel/")}
-            />
-            <SidebarButton
-              active={false}
-              icon={<ClipboardList className="h-4 w-4" />}
-              label="Submissions"
-              onClick={() => {}}
-            />
-            <SidebarButton
-              active={false}
-              icon={<BarChart3 className="h-4 w-4" />}
-              label="Analytics"
-              onClick={() => {}}
-            />
-          </>
-        )}
-      </nav>
-
-      <div className="mt-8 rounded-2xl border border-[#FF2D6F]/20 bg-[#FF2D6F]/10 p-4">
-        <div className="mb-2 flex items-center gap-2 text-[#FF2D6F]">
-          <Bell className="h-4 w-4" />
-          <span className="font-medium">Tomorrow’s Demo Flow</span>
+  return (
+    <>
+      {/* Mobile Header */}
+      <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#0A0A0A]/90 p-4 lg:hidden">
+        <div className="flex flex-col">
+          <span className="text-[10px] uppercase tracking-widest text-[#FF2D6F]">ITAP Hackathon</span>
+          <span className="text-sm font-bold capitalize">{role} Portal</span>
         </div>
-        <ul className="space-y-2 text-sm text-zinc-200">
-          <li>1. Open leaderboard</li>
-          <li>2. Switch to judge scoring</li>
-          <li>3. Show student progress + hints</li>
-          <li>4. End with instructions and timeline</li>
-        </ul>
+        <button 
+          onClick={() => setIsOpen(true)}
+          className="rounded-xl bg-white/5 p-2 text-white"
+        >
+          <Menu className="h-6 w-6" />
+        </button>
       </div>
-    </aside>
+
+      {/* Mobile Sidebar Overlay */}
+      {isOpen && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setIsOpen(false)}>
+          <aside 
+            className="absolute left-4 top-4 bottom-4 w-[280px] rounded-[28px] border border-white/10 bg-[#0A0A0A] p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-8 flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.35em] text-[#FF2D6F]">DISRUPTIVE</p>
+                <h1 className="text-xl font-bold">Hackathon</h1>
+              </div>
+              <button onClick={() => setIsOpen(false)} className="rounded-xl bg-white/5 p-2">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <nav className="space-y-2">{navItems}</nav>
+            <div className="mt-8 border-t border-white/10 pt-6">
+              <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-zinc-400 hover:bg-red-500/10 hover:text-red-400">
+                <LogOut className="h-4 w-4" />
+                <span className="font-medium">Logout</span>
+              </button>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* Desktop Sidebar */}
+      <aside className="hidden w-auto min-w-[240px] max-w-[280px] shrink-0 rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-2xl backdrop-blur lg:block">
+        <div className="mb-8">
+          <p className="text-[10px] uppercase tracking-[0.4em] text-[#FF2D6F]">
+            DISRUPTIVE INNOVATION
+          </p>
+          <h1 className="mt-3 text-2xl font-black tracking-tighter">
+            ITAP Hackathon
+          </h1>
+          <p className="mt-1 text-xs font-bold uppercase tracking-widest text-zinc-500">
+            {role} Portal
+          </p>
+        </div>
+
+        <nav className="space-y-2">{navItems}</nav>
+
+        <div className="mt-8 border-t border-white/10 pt-6">
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-zinc-400 transition hover:bg-red-500/10 hover:text-red-400"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="font-medium">Logout</span>
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }
