@@ -134,9 +134,23 @@ function isEventActive(event: TimelineEvent, now: Date) {
 
 export default function Home() {
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showSignUpModal, setShowSignUpModal] = useState(false);
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [now, setNow] = useState(new Date());
   const [selectedCriteria, setSelectedCriteria] = useState<typeof criteriaDetails[0] | null>(null);
+
+  // Sign Up State
+  const [teams, setTeams] = useState<any[]>([]);
+  const [signUpData, setSignUpData] = useState({
+    username: "",
+    password: "",
+    full_name: "",
+    role: "student",
+    team_id: "",
+  });
+  const [signUpError, setSignUpError] = useState("");
+  const [signUpSuccess, setSignUpSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const role = (localStorage.getItem("role") as any);
   const isLoggedIn = !!role;
@@ -152,6 +166,54 @@ export default function Home() {
       return () => clearInterval(id);
     }
   }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (showSignUpModal) {
+      fetch("/api/team/teams/")
+        .then(r => r.json())
+        .then(setTeams)
+        .catch(() => {});
+    }
+  }, [showSignUpModal]);
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSignUpError("");
+    setIsSubmitting(true);
+
+    if (!signUpData.username || !signUpData.password || !signUpData.role) {
+      setSignUpError("Username, password and role are required.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (signUpData.role === "student" && !signUpData.team_id) {
+      setSignUpError("Please select a team.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/users/create/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...signUpData,
+          team_id: signUpData.team_id ? Number(signUpData.team_id) : undefined,
+          auto_generate_password: false
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSignUpError(data.error || "Failed to create account.");
+      } else {
+        setSignUpSuccess(true);
+      }
+    } catch {
+      setSignUpError("Unable to connect to the server.");
+    }
+    setIsSubmitting(false);
+  };
 
   if (isLoggedIn) {
     return (
@@ -342,6 +404,133 @@ export default function Home() {
           </div>
         )}
 
+        {/* Sign Up Modal */}
+        {showSignUpModal && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
+            <div className="relative w-full max-w-lg rounded-[32px] border border-white/10 bg-[#0A0A0A] p-8 shadow-2xl" onClick={e => e.stopPropagation()}>
+              <button
+                onClick={() => setShowSignUpModal(false)}
+                className="absolute -top-4 -right-4 rounded-full bg-[#FF2D6F] p-2 text-white shadow-lg hover:bg-[#FF4D85] transition-all"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              <div className="mb-8 flex items-center gap-4">
+                <div className="rounded-2xl bg-[#FF2D6F]/10 p-3">
+                  <UserRoundCog className="h-6 w-6 text-[#FF2D6F]" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-white">Create Account</h3>
+                  <p className="text-zinc-400 text-sm">Join the ITAP Hackathon platform</p>
+                </div>
+              </div>
+
+              {signUpSuccess ? (
+                <div className="text-center space-y-6 py-4">
+                  <div className="mx-auto w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                    <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-bold text-white mb-2">Account Created!</h4>
+                    <p className="text-zinc-400">Your account has been successfully created. You can now log in with your credentials.</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowSignUpModal(false);
+                      setShowLoginModal(true);
+                    }}
+                    className="w-full py-3.5 rounded-2xl bg-[#FF2D6F] text-white font-bold hover:bg-[#FF4D85] transition-all"
+                  >
+                    Go to Login
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleSignUp} className="space-y-4">
+                  {signUpError && (
+                    <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium">
+                      {signUpError}
+                    </div>
+                  )}
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1">Full Name</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. John Doe"
+                      className="w-full rounded-2xl bg-white/5 border border-white/10 p-4 text-white placeholder:text-zinc-600 focus:outline-none focus:border-[#FF2D6F]/50 transition-all"
+                      value={signUpData.full_name}
+                      onChange={e => setSignUpData({...signUpData, full_name: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1">Username *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Choose a username"
+                      className="w-full rounded-2xl bg-white/5 border border-white/10 p-4 text-white placeholder:text-zinc-600 focus:outline-none focus:border-[#FF2D6F]/50 transition-all"
+                      value={signUpData.username}
+                      onChange={e => setSignUpData({...signUpData, username: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1">Password *</label>
+                    <input
+                      type="password"
+                      required
+                      placeholder="Minimum 8 characters"
+                      className="w-full rounded-2xl bg-white/5 border border-white/10 p-4 text-white placeholder:text-zinc-600 focus:outline-none focus:border-[#FF2D6F]/50 transition-all"
+                      value={signUpData.password}
+                      onChange={e => setSignUpData({...signUpData, password: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1">Role *</label>
+                      <select
+                        className="w-full rounded-2xl bg-[#151515] border border-white/10 p-4 text-white focus:outline-none focus:border-[#FF2D6F]/50 transition-all appearance-none"
+                        value={signUpData.role}
+                        onChange={e => setSignUpData({...signUpData, role: e.target.value as any})}
+                      >
+                        <option value="student">Student</option>
+                        <option value="judge">Judge</option>
+                      </select>
+                    </div>
+
+                    {signUpData.role === "student" && (
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1">Team *</label>
+                        <select
+                          className="w-full rounded-2xl bg-[#151515] border border-white/10 p-4 text-white focus:outline-none focus:border-[#FF2D6F]/50 transition-all appearance-none"
+                          value={signUpData.team_id}
+                          onChange={e => setSignUpData({...signUpData, team_id: e.target.value})}
+                          required
+                        >
+                          <option value="">Select Team</option>
+                          {teams.map(t => (
+                            <option key={t.id} value={t.id}>{t.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="mt-4 w-full py-4 rounded-2xl bg-[#FF2D6F] text-white font-bold hover:bg-[#FF4D85] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#FF2D6F]/20"
+                  >
+                    {isSubmitting ? "Creating Account..." : "Register Now"}
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        )}
+
         <section className="rounded-[32px] border border-white/10 bg-[#0A0A0A]/90 p-8 shadow-2xl backdrop-blur">
           <div className="flex flex-col gap-8 xl:flex-row xl:items-center xl:justify-between">
             <div className="max-w-3xl">
@@ -354,7 +543,7 @@ export default function Home() {
                 <img
                   src={itapLogoUrl}
                   alt="ITAP"
-                  className="h-12 w-auto rounded-md bg-white p-1 object-contain"
+                  className="h-12 w-auto object-contain"
                 />
               </div>
 
@@ -375,13 +564,25 @@ export default function Home() {
                 present.
               </p>
 
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div className="mt-8 flex flex-wrap gap-4">
                 <button
                   onClick={() => setShowLoginModal(true)}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-[#FF2D6F] px-5 py-3 font-medium text-white transition hover:scale-[1.02]"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-[#FF2D6F] px-6 py-3.5 font-bold text-white transition hover:scale-[1.02] shadow-lg shadow-[#FF2D6F]/20"
                 >
                   Go to Login
                   <ArrowRight className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => {
+                    setSignUpSuccess(false);
+                    setSignUpError("");
+                    setSignUpData({ username: "", password: "", full_name: "", role: "student", team_id: "" });
+                    setShowSignUpModal(true);
+                  }}
+                  className="inline-flex items-center gap-2 rounded-2xl bg-white/5 border border-white/10 px-6 py-3.5 font-bold text-white transition hover:bg-white/10 hover:scale-[1.02]"
+                >
+                  Create Account
+                  <UserRoundCog className="h-4 w-4" />
                 </button>
               </div>
             </div>

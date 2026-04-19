@@ -21,6 +21,9 @@ import {
   Wand2,
   TimerReset,
   Pencil,
+  Settings,
+  CheckCircle2,
+  CircleDashed,
 } from "lucide-react";
 
 type User = {
@@ -143,6 +146,32 @@ export default function AdminView() {
   const [resetLoading, setResetLoading] = useState(false);
   const [resetError, setResetError] = useState("");
   const [resetGeneratedPassword, setResetGeneratedPassword] = useState("");
+  const [editUser, setEditUser] = useState<User | null>(null);
+  const [updatingUser, setUpdatingUser] = useState(false);
+  const [progressTeam, setProgressTeam] = useState<Team | null>(null);
+  const [teamTasks, setTeamTasks] = useState<any[]>([]);
+  const [loadingTasks, setLoadingTasks] = useState(false);
+  const [adminTaskFilter, setAdminTaskFilter] = useState<"all" | "done" | "pending">("all");
+
+  const filteredAdminTasks = useMemo(() => {
+    return teamTasks.filter((task) => {
+      if (adminTaskFilter === "done") return task.is_done;
+      if (adminTaskFilter === "pending") return !task.is_done;
+      return true;
+    });
+  }, [teamTasks, adminTaskFilter]);
+
+  const fetchTeamTasks = async (teamId: number) => {
+    setLoadingTasks(true);
+    try {
+      const res = await fetch(`/api/team/teams/${teamId}/tasks/`);
+      const data = await res.json();
+      setTeamTasks(data);
+    } catch {
+      setTeamTasks([]);
+    }
+    setLoadingTasks(false);
+  };
 
   const fetchUsers = async () => {
     setLoadingUsers(true);
@@ -272,19 +301,34 @@ export default function AdminView() {
       return;
     }
     setCreating(true);
+
+    let startTimeISO = "";
+    let endTimeISO: string | null = null;
+
+    try {
+      startTimeISO = new Date(newEvent.start_time).toISOString();
+      if (newEvent.end_time) {
+        endTimeISO = new Date(newEvent.end_time).toISOString();
+      }
+    } catch (e) {
+      setCreateError("Invalid date format provided.");
+      setCreating(false);
+      return;
+    }
+
     try {
       const res = await fetch("/api/team/events/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           label: newEvent.label,
-          start_time: new Date(newEvent.start_time).toISOString(),
-          end_time: newEvent.end_time ? new Date(newEvent.end_time).toISOString() : null,
+          start_time: startTimeISO,
+          end_time: endTimeISO,
           order: newEvent.order,
         }),
       });
-      const data = await res.json();
       if (!res.ok) {
+        const data = await res.json();
         setCreateError(data.error || "Failed to create event.");
         setCreating(false);
         return;
@@ -292,8 +336,8 @@ export default function AdminView() {
       setShowCreateEvent(false);
       setNewEvent({ label: "", start_time: "", end_time: "", order: 0 });
       fetchEvents();
-    } catch {
-      setCreateError("Unable to connect to the server.");
+    } catch (err: any) {
+      setCreateError(`Unable to connect to the server: ${err?.message || "Unknown error"}`);
     }
     setCreating(false);
   };
@@ -305,14 +349,28 @@ export default function AdminView() {
       setCreateError("Label and start time are required.");
       return;
     }
+
+    let startTimeISO = "";
+    let endTimeISO: string | null = null;
+
+    try {
+      startTimeISO = new Date(editEventForm.start_time).toISOString();
+      if (editEventForm.end_time) {
+        endTimeISO = new Date(editEventForm.end_time).toISOString();
+      }
+    } catch (e) {
+      setCreateError("Invalid date format provided.");
+      return;
+    }
+
     try {
       const res = await fetch(`/api/team/events/${editingEvent.id}/`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           label: editEventForm.label,
-          start_time: new Date(editEventForm.start_time).toISOString(),
-          end_time: editEventForm.end_time ? new Date(editEventForm.end_time).toISOString() : null,
+          start_time: startTimeISO,
+          end_time: endTimeISO,
           order: editEventForm.order,
         }),
       });
@@ -323,8 +381,8 @@ export default function AdminView() {
       }
       setEditingEvent(null);
       fetchEvents();
-    } catch {
-      setCreateError("Unable to connect to the server.");
+    } catch (err: any) {
+      setCreateError(`Unable to connect to the server: ${err?.message || "Unknown error"}`);
     }
   };
 
@@ -385,6 +443,34 @@ export default function AdminView() {
     } catch {
       alert("Unable to connect to the server.");
     }
+  };
+
+  const handleUpdateUser = async () => {
+    if (!editUser) return;
+    setUpdatingUser(true);
+    setResetError("");
+    try {
+      const res = await fetch(`/api/users/${editUser.id}/update/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: editUser.username,
+          full_name: editUser.full_name,
+          role: editUser.role,
+          team_id: editUser.team_id,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setResetError(data.error || "Failed to update user.");
+      } else {
+        setEditUser(null);
+        fetchUsers();
+      }
+    } catch {
+      setResetError("Unable to connect to the server.");
+    }
+    setUpdatingUser(false);
   };
 
   const handleResetPassword = async () => {
@@ -673,14 +759,13 @@ export default function AdminView() {
                           )}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <button onClick={() => openResetModal(u.id)} className="rounded-lg p-2 text-zinc-500 transition hover:bg-amber-500/10 hover:text-amber-400" title="Reset password">
-                              <KeyRound className="h-4 w-4" />
-                            </button>
-                            <button onClick={() => handleDeleteUser(u.id, u.username)} className="rounded-lg p-2 text-zinc-500 transition hover:bg-red-500/10 hover:text-red-400" title="Delete user">
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => setEditUser(u)}
+                            className="rounded-lg p-2 text-zinc-500 transition hover:bg-white/10 hover:text-white"
+                            title="Edit user"
+                          >
+                            <Settings className="h-4 w-4" />
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -691,56 +776,170 @@ export default function AdminView() {
           </section>
         )}
 
-        {/* Password Reset Modal */}
-        {resetUserId && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-[#0A0A0A] p-6 shadow-2xl">
-              <div className="mb-4 flex items-center justify-between">
+        {/* Edit User Modal */}
+        {editUser && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+            <div className="w-full max-w-lg rounded-[28px] border border-white/10 bg-[#0A0A0A] p-8 shadow-2xl relative">
+              <div className="mb-6 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <KeyRound className="h-5 w-5 text-[#FF2D6F]" />
-                  <h3 className="text-xl font-semibold text-white">Reset Password</h3>
+                  <div className="rounded-2xl bg-[#FF2D6F]/10 p-2.5">
+                    <Settings className="h-6 w-6 text-[#FF2D6F]" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white">Edit User</h3>
+                    <p className="text-xs text-zinc-500">ID: {editUser.id}</p>
+                  </div>
                 </div>
-                <button onClick={closeResetModal} className="text-zinc-400 hover:text-white"><X className="h-5 w-5" /></button>
+                <button
+                  onClick={() => setEditUser(null)}
+                  className="rounded-full bg-white/5 p-2 text-zinc-400 hover:bg-white/10 hover:text-white transition-all"
+                >
+                  <X className="h-5 w-5" />
+                </button>
               </div>
-              <p className="mb-5 text-sm text-zinc-300">
-                Reset password for <span className="font-medium text-white">{resetUser?.full_name || resetUser?.username}</span>
-                {resetUser?.full_name && <span className="text-zinc-500"> (@{resetUser.username})</span>}
-              </p>
-              {resetGeneratedPassword ? (
+
+              <div className="space-y-6">
+                {/* Profile Section */}
                 <div className="space-y-4">
-                  <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
-                    <p className="mb-1 text-sm font-medium text-emerald-300">Password has been reset. New password:</p>
-                    <div className="mt-2 flex items-center gap-2">
-                      <code className="rounded-lg bg-black/40 px-3 py-2 text-lg font-mono text-white">{resetGeneratedPassword}</code>
-                      <CopyButton text={resetGeneratedPassword} />
+                  <h4 className="text-sm font-bold text-zinc-500 uppercase tracking-widest">Profile Details</h4>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-zinc-400 ml-1">Full Name</label>
+                      <input
+                        type="text"
+                        value={editUser.full_name || ""}
+                        onChange={(e) => setEditUser({ ...editUser, full_name: e.target.value })}
+                        className="w-full rounded-xl border border-white/10 bg-[#1A1A1A] px-4 py-3 text-white outline-none focus:border-[#FF2D6F]/50 transition-all"
+                      />
                     </div>
-                    <p className="mt-3 text-xs text-zinc-400">The user will be asked to change this password on their next login.</p>
-                  </div>
-                  <button onClick={closeResetModal} className="w-full rounded-xl bg-white/10 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/20">Done</button>
-                </div>
-              ) : (
-                <>
-                  <div className="mb-4 flex items-center justify-between rounded-xl border border-white/10 bg-[#1A1A1A] px-4 py-3">
-                    <label className="text-sm text-zinc-300">Auto-generate password</label>
-                    <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-400">
-                      <input type="checkbox" checked={resetAutoGenerate} onChange={(e) => setResetAutoGenerate(e.target.checked)} className="accent-[#FF2D6F]" />
-                      <Wand2 className="h-3.5 w-3.5" />
-                    </label>
-                  </div>
-                  {!resetAutoGenerate && (
-                    <div className="mb-4">
-                      <label className="mb-1 block text-sm text-zinc-400">New Password</label>
-                      <input type="text" placeholder="At least 8 characters" value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} className="w-full rounded-xl border border-white/10 bg-[#1A1A1A] px-3 py-2 text-white outline-none focus:border-[#FF2D6F]" />
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-zinc-400 ml-1">Username</label>
+                      <input
+                        type="text"
+                        value={editUser.username}
+                        onChange={(e) => setEditUser({ ...editUser, username: e.target.value })}
+                        className="w-full rounded-xl border border-white/10 bg-[#1A1A1A] px-4 py-3 text-white outline-none focus:border-[#FF2D6F]/50 transition-all"
+                      />
                     </div>
-                  )}
-                  {resetError && (
-                    <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-400">{resetError}</div>
-                  )}
-                  <button onClick={handleResetPassword} disabled={resetLoading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF2D6F] px-5 py-2.5 text-sm font-medium text-white transition hover:scale-[1.02] disabled:opacity-60">
-                    {resetLoading ? (<><Loader2 className="h-4 w-4 animate-spin" />Resetting...</>) : "Reset Password"}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-zinc-400 ml-1">Role</label>
+                      <select
+                        value={editUser.role}
+                        onChange={(e) => setEditUser({ ...editUser, role: e.target.value as any })}
+                        className="w-full rounded-xl border border-white/10 bg-[#1A1A1A] px-4 py-3 text-white outline-none focus:border-[#FF2D6F]/50 transition-all appearance-none"
+                      >
+                        <option value="student">Student</option>
+                        <option value="judge">Judge</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
+                    {editUser.role === "student" && (
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-zinc-400 ml-1">Team</label>
+                        <select
+                          value={editUser.team_id || ""}
+                          onChange={(e) => setEditUser({ ...editUser, team_id: e.target.value ? Number(e.target.value) : null })}
+                          className="w-full rounded-xl border border-white/10 bg-[#1A1A1A] px-4 py-3 text-white outline-none focus:border-[#FF2D6F]/50 transition-all appearance-none"
+                        >
+                          <option value="">No Team</option>
+                          {teams.map((t) => (
+                            <option key={t.id} value={t.id}>{t.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={handleUpdateUser}
+                    disabled={updatingUser}
+                    className="w-full rounded-xl bg-white/5 border border-white/10 py-3 text-sm font-bold text-white hover:bg-white/10 transition-all disabled:opacity-50"
+                  >
+                    {updatingUser ? "Saving..." : "Save Profile Changes"}
                   </button>
-                </>
-              )}
+                </div>
+
+                <div className="h-px bg-white/5" />
+
+                {/* Password Reset Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-bold text-zinc-500 uppercase tracking-widest">Password Management</h4>
+                    <button
+                      onClick={() => {
+                        setResetUserId(editUser.id);
+                        setResetError("");
+                        setResetGeneratedPassword("");
+                      }}
+                      className="text-xs font-bold text-[#FF2D6F] hover:underline"
+                    >
+                      Reset Now
+                    </button>
+                  </div>
+
+                  {resetUserId === editUser.id && (
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 space-y-4">
+                      {resetGeneratedPassword ? (
+                        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4">
+                          <p className="mb-1 text-xs font-medium text-emerald-300">New password generated:</p>
+                          <div className="flex items-center gap-2">
+                            <code className="rounded-lg bg-black/40 px-3 py-1.5 text-base font-mono text-white">{resetGeneratedPassword}</code>
+                            <CopyButton text={resetGeneratedPassword} />
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-zinc-400">Auto-generate password</span>
+                            <input
+                              type="checkbox"
+                              checked={resetAutoGenerate}
+                              onChange={(e) => setResetAutoGenerate(e.target.checked)}
+                              className="accent-[#FF2D6F]"
+                            />
+                          </div>
+                          {!resetAutoGenerate && (
+                            <input
+                              type="text"
+                              placeholder="New password (min 8 chars)"
+                              value={resetPassword}
+                              onChange={(e) => setResetPassword(e.target.value)}
+                              className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white outline-none focus:border-[#FF2D6F]/50"
+                            />
+                          )}
+                          <button
+                            onClick={handleResetPassword}
+                            disabled={resetLoading}
+                            className="w-full rounded-lg bg-[#FF2D6F]/20 py-2 text-xs font-bold text-[#FF2D6F] hover:bg-[#FF2D6F]/30 transition-all"
+                          >
+                            {resetLoading ? "Resetting..." : "Confirm Password Reset"}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="h-px bg-white/5" />
+
+                {/* Danger Zone */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-bold text-red-500/50 uppercase tracking-widest">Danger Zone</h4>
+                  <button
+                    onClick={() => {
+                      handleDeleteUser(editUser.id, editUser.username);
+                      setEditUser(null);
+                    }}
+                    className="w-full rounded-xl border border-red-500/20 bg-red-500/5 py-3 text-sm font-bold text-red-500 hover:bg-red-500/10 transition-all"
+                  >
+                    Delete Account
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -769,14 +968,10 @@ export default function AdminView() {
                   <h4 className="font-semibold text-white">Create New Team</h4>
                   <button onClick={() => setShowCreateTeam(false)} className="text-zinc-400 hover:text-white"><X className="h-4 w-4" /></button>
                 </div>
-                <div className="grid gap-4 sm:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-sm text-zinc-400">Team Name</label>
                     <input type="text" value={newTeam.name} onChange={(e) => setNewTeam({ ...newTeam, name: e.target.value })} className="w-full rounded-xl border border-white/10 bg-[#0A0A0A] px-3 py-2 text-white outline-none focus:border-[#FF2D6F]" />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm text-zinc-400">Project Name</label>
-                    <input type="text" value={newTeam.project_name} onChange={(e) => setNewTeam({ ...newTeam, project_name: e.target.value })} className="w-full rounded-xl border border-white/10 bg-[#0A0A0A] px-3 py-2 text-white outline-none focus:border-[#FF2D6F]" />
                   </div>
                   <div>
                     <label className="mb-1 block text-sm text-zinc-400">Mentor Name</label>
@@ -803,7 +998,6 @@ export default function AdminView() {
                   <thead>
                     <tr className="border-b border-white/10 text-zinc-400">
                       <th className="px-4 py-3 font-medium">Team Name</th>
-                      <th className="px-4 py-3 font-medium">Project</th>
                       <th className="px-4 py-3 font-medium">Mentor</th>
                       <th className="px-4 py-3 font-medium">Score</th>
                       <th className="px-4 py-3 font-medium">Members</th>
@@ -816,7 +1010,6 @@ export default function AdminView() {
                       return (
                         <tr key={t.id} className="border-b border-white/5 transition hover:bg-white/5">
                           <td className="px-4 py-3 font-medium text-white">{t.name}</td>
-                          <td className="px-4 py-3 text-zinc-300">{t.project_name || <span className="text-zinc-600">Not set</span>}</td>
                           <td className="px-4 py-3">
                             <MentorCell teamId={t.id} mentorName={t.mentor_name} onSave={handleUpdateMentor} />
                           </td>
@@ -835,9 +1028,21 @@ export default function AdminView() {
                             )}
                           </td>
                           <td className="px-4 py-3 text-right">
-                            <button onClick={() => handleDeleteTeam(t.id, t.name)} className="rounded-lg p-2 text-zinc-500 transition hover:bg-red-500/10 hover:text-red-400" title="Delete team">
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                onClick={() => {
+                                  setProgressTeam(t);
+                                  fetchTeamTasks(t.id);
+                                }}
+                                className="rounded-lg p-2 text-zinc-500 transition hover:bg-white/10 hover:text-white"
+                                title="View tasks progress"
+                              >
+                                <ClipboardList className="h-4 w-4" />
+                              </button>
+                              <button onClick={() => handleDeleteTeam(t.id, t.name)} className="rounded-lg p-2 text-zinc-500 transition hover:bg-red-500/10 hover:text-red-400" title="Delete team">
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -1016,6 +1221,101 @@ export default function AdminView() {
             ))}
           </div>
         </section>
+
+        {/* Team Progress Modal */}
+        {progressTeam && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div className="w-full max-w-lg max-h-[90vh] rounded-[28px] border border-white/10 bg-[#0A0A0A] p-8 shadow-2xl relative flex flex-col">
+              <div className="mb-6 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-2xl bg-sky-500/10 p-2.5">
+                    <ClipboardList className="h-6 w-6 text-sky-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white">Team Progress</h3>
+                    <p className="text-xs text-zinc-500 uppercase font-black">{progressTeam.name}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setProgressTeam(null)}
+                  className="rounded-full bg-white/5 p-2 text-zinc-400 hover:bg-white/10 hover:text-white transition-all"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Filters */}
+              <div className="mb-6 flex gap-2 shrink-0 overflow-x-auto pb-1">
+                {[
+                  { id: "all", label: "All" },
+                  { id: "done", label: "Completed" },
+                  { id: "pending", label: "Pending" }
+                ].map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => setAdminTaskFilter(f.id as any)}
+                    className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+                      adminTaskFilter === f.id 
+                        ? "bg-sky-500 text-white shadow-lg shadow-sky-500/20" 
+                        : "bg-white/5 text-zinc-400 hover:bg-white/10"
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                {loadingTasks ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-sky-400" />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {filteredAdminTasks.map((task) => (
+                      <div
+                        key={task.id}
+                        className={`flex items-center gap-4 rounded-2xl border p-4 transition-all ${
+                          task.is_done 
+                            ? "border-emerald-500/20 bg-emerald-500/[0.04]" 
+                            : "border-white/5 bg-white/[0.02]"
+                        }`}
+                      >
+                        {task.is_done ? (
+                          <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                        ) : (
+                          <CircleDashed className="h-5 w-5 text-zinc-600" />
+                        )}
+                        <div className="flex-1">
+                          <div className={`font-semibold ${task.is_done ? "text-emerald-50" : "text-zinc-400"}`}>
+                            {task.label}
+                          </div>
+                          <div className="text-[10px] uppercase font-black tracking-tighter text-zinc-600">
+                            {task.is_done ? "Completed" : "Pending"}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {filteredAdminTasks.length === 0 && (
+                      <div className="text-center py-12 text-zinc-500 italic text-sm">
+                        No tasks found for this filter.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-8 shrink-0">
+                <button
+                  onClick={() => setProgressTeam(null)}
+                  className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-sm font-bold text-zinc-300 hover:bg-white/10 transition-all active:scale-[0.98]"
+                >
+                  Close Progress View
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </AppLayout>
   );

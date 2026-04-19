@@ -7,6 +7,7 @@ from .views import (
     delete_user,
     reset_password,
     change_password,
+    update_user,
 )
 
 urlpatterns = [
@@ -17,4 +18,5 @@ urlpatterns = [
     path("change-password/", change_password),
     path("<int:user_id>/", delete_user),
     path("<int:user_id>/reset-password/", reset_password),
+    path("<int:user_id>/update/", update_user),
 ]

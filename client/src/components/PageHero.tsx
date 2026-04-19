@@ -30,7 +30,7 @@ export default function PageHero({
             <img
               src={itapLogoUrl}
               alt="ITAP"
-              className="h-12 w-auto rounded-md bg-white p-1 object-contain"
+              className="h-12 w-auto object-contain"
             />
           </div>
 

@@ -1,10 +1,12 @@
 import json
 from decimal import Decimal, InvalidOperation
+from datetime import datetime
 
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
-from .models import Team, HackathonEvent, Score
+from django.views.decorators.http import require_POST
+from .models import Team, HackathonEvent, Score, Task
 
 
 def serialize_team(team):
@@ -31,6 +33,15 @@ def serialize_team(team):
         "judgings": judgings,
         "created_at": team.created_at.isoformat(),
         "updated_at": team.updated_at.isoformat(),
+    }
+
+
+def serialize_task(task):
+    return {
+        "id": task.id,
+        "label": task.label,
+        "is_done": task.is_done,
+        "updated_at": task.updated_at.isoformat(),
     }
 
 
@@ -125,6 +136,9 @@ def teams_collection(request):
             score=score,
         )
 
+        for task_label in Task.DEFAULT_TASKS:
+            Task.objects.create(team=team, label=task_label)
+
         return JsonResponse(serialize_team(team), status=201)
 
     return JsonResponse({"error": "Method not allowed."}, status=405)
@@ -195,10 +209,17 @@ def events_collection(request):
         if not label or not start_time:
             return JsonResponse({"error": "Label and start_time are required."}, status=400)
 
+        # Parse ISO strings to datetime objects (handling the 'Z' suffix)
+        try:
+            start_dt = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+            end_dt = datetime.fromisoformat(end_time.replace('Z', '+00:00')) if end_time else None
+        except (ValueError, TypeError):
+            return JsonResponse({"error": "Invalid date format."}, status=400)
+
         event = HackathonEvent.objects.create(
             label=label,
-            start_time=start_time,
-            end_time=end_time or None,
+            start_time=start_dt,
+            end_time=end_dt,
             order=order,
         )
         return JsonResponse(serialize_event(event), status=201)
@@ -219,20 +240,58 @@ def event_detail(request, event_id):
         except json.JSONDecodeError:
             return JsonResponse({"error": "Invalid JSON body."}, status=400)
 
-        if "label" in payload:
-            event.label = (payload["label"] or "").strip()
-        if "start_time" in payload:
-            event.start_time = payload["start_time"]
-        if "end_time" in payload:
-            event.end_time = payload["end_time"] or None
-        if "order" in payload:
-            event.order = payload["order"]
-
-        event.save()
-        return JsonResponse(serialize_event(event))
+        try:
+            if "label" in payload:
+                event.label = (payload["label"] or "").strip()
+            if "start_time" in payload:
+                event.start_time = datetime.fromisoformat(payload["start_time"].replace('Z', '+00:00'))
+            if "end_time" in payload:
+                val = payload["end_time"]
+                event.end_time = datetime.fromisoformat(val.replace('Z', '+00:00')) if val else None
+            if "order" in payload:
+                event.order = payload["order"]
+            
+            event.save()
+            return JsonResponse(serialize_event(event))
+        except (ValueError, TypeError):
+            return JsonResponse({"error": "Invalid date format."}, status=400)
 
     if request.method == "DELETE":
         event.delete()
         return JsonResponse({"message": "Event deleted."})
 
     return JsonResponse({"error": "Method not allowed."}, status=405)
+
+
+@csrf_exempt
+def team_tasks(request, team_id):
+    team = get_object_or_404(Team, id=team_id)
+    if request.method == "GET":
+        tasks = team.tasks.all()
+        
+        # If no tasks exist for this team, initialize them with defaults
+        if not tasks.exists():
+            for task_label in Task.DEFAULT_TASKS:
+                Task.objects.create(team=team, label=task_label)
+            # Re-fetch from DB to ensure we have the objects with IDs
+            tasks = team.tasks.all()
+            
+        return JsonResponse([serialize_task(t) for t in tasks], safe=False)
+    return JsonResponse({"error": "Method not allowed."}, status=405)
+
+
+@csrf_exempt
+@require_POST
+def toggle_task(request, task_id):
+    task = get_object_or_404(Task, id=task_id)
+    try:
+        payload = json.loads(request.body or "{}")
+        is_done = payload.get("is_done")
+        if is_done is not None:
+            task.is_done = bool(is_done)
+            task.save()
+            return JsonResponse(serialize_task(task))
+        return JsonResponse({"error": "is_done field required"}, status=400)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON body"}, status=400)
+

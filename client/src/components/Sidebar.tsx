@@ -5,8 +5,6 @@ import {
   LayoutDashboard,
   UserRoundCog,
   GraduationCap,
-  ClipboardList,
-  BarChart3,
   ShieldCheck,
   LogOut,
   Menu,
@@ -78,18 +76,6 @@ export default function Sidebar({ active, role }: Props) {
             icon={<ShieldCheck className="h-4 w-4" />}
             label="Admin"
             onClick={() => (window.location.href = "/admin-panel/")}
-          />
-          <SidebarButton
-            active={false}
-            icon={<ClipboardList className="h-4 w-4" />}
-            label="Submissions"
-            onClick={() => {}}
-          />
-          <SidebarButton
-            active={false}
-            icon={<BarChart3 className="h-4 w-4" />}
-            label="Analytics"
-            onClick={() => {}}
           />
         </>
       )}

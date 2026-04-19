@@ -99,7 +99,7 @@ def create_user(request):
             team=team,
             full_name=full_name,
         )
-        user.must_change_password = True
+        user.must_change_password = auto_generate
         user.save()
 
         response_data = {
@@ -250,3 +250,55 @@ def login_user(request):
 def logout_user(request):
     logout(request)
     return JsonResponse({"message": "Logged out successfully"}, status=200)
+
+
+@csrf_exempt
+def update_user(request, user_id):
+    if request.method != "POST":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    try:
+        user = Users.objects.get(id=user_id)
+        data = json.loads(request.body)
+
+        username = data.get("username")
+        full_name = data.get("full_name")
+        role = data.get("role")
+        team_id = data.get("team_id")
+
+        if username:
+            if (
+                Users.objects.filter(username=username)
+                .exclude(id=user_id)
+                .exists()
+            ):
+                return JsonResponse(
+                    {"error": "A user with that username already exists."},
+                    status=409,
+                )
+            user.username = username
+
+        if full_name is not None:
+            user.full_name = full_name
+
+        if role:
+            user.role = role
+
+        if team_id is not None:
+            if team_id == "":
+                user.team = None
+            else:
+                try:
+                    user.team = Team.objects.get(id=team_id)
+                except Team.DoesNotExist:
+                    return JsonResponse({"error": "Invalid team_id"}, status=400)
+
+        user.save()
+        return JsonResponse({"message": "User updated successfully"}, status=200)
+
+    except Users.DoesNotExist:
+        return JsonResponse({"error": "User not found"}, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON body"}, status=400)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

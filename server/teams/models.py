@@ -76,3 +76,28 @@ class HackathonEvent(models.Model):
 
     def __str__(self):
         return self.label
+
+class Task(models.Model):
+    DEFAULT_TASKS = [
+        "Challenge 1: Build the Application Foundation",
+        "Challenge 2: Create the User Prompt Experience",
+        "Challenge 3: Connect the Application to the AI API",
+        "Challenge 4: Handle and Store the Raw AI Response",
+        "Challenge 5: Process and Clean the Data",
+        "Challenge 6: Convert the Data into Flashcards",
+        "Challenge 7: Display the Flashcards in the Application",
+        "Challenge 8: Add Flashcard Navigation",
+        "Challenge 9: Handle Errors and Edge Cases",
+        "Challenge 10: Improve Usability and Presentation",
+    ]
+
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="tasks")
+    label = models.CharField(max_length=200)
+    is_done = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"{self.team.name}: {self.label} ({'Done' if self.is_done else 'Pending'})"
