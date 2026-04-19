@@ -25,6 +25,7 @@ class Users(AbstractUser):
         blank=True,
         related_name="users",
     )
+    must_change_password = models.BooleanField(default=False)
 
     def clean(self):
         super().clean()

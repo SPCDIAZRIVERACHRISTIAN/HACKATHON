@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import PageHero from "../components/PageHero";
 import AppLayout from "../components/AppLayout";
 import Sidebar from "../components/Sidebar";
@@ -17,26 +17,6 @@ import {
   CircleDashed,
 } from "lucide-react";
 
-type BackendTeam = {
-  id: number;
-  name: string;
-  project_name?: string;
-  score?: string | number;
-};
-
-type UiTeam = {
-  id: number;
-  name: string;
-  technical: number;
-  creativity: number;
-  impact: number;
-  presentation: number;
-  ux: number;
-  progress: number;
-  helpRequests: number;
-  status: string;
-};
-
 const weights = {
   technical: 0.3,
   creativity: 0.25,
@@ -46,62 +26,83 @@ const weights = {
 };
 
 const instructions = [
-  "Choose a challenge track and define the problem clearly.",
-  "Build a polished demo-first interface that can be shown live.",
-  "Upload progress checkpoints so judges can review live updates.",
-  "Present a simple story: problem, solution, impact, and user experience.",
+  "Technical Execution (30%): Code quality, complexity, and stability.",
+  "Creativity & Innovation (25%): Originality and uniqueness of the solution.",
+  "Impact & Relevance (20%): How well it solves the chosen problem.",
+  "Presentation (15%): Clarity, storytelling, and demo quality.",
+  "User Experience (10%): UI design, intuitiveness, and polish.",
 ];
-
-const timeline = [
-  { label: "Kickoff", time: "7:30 AM - 8:00 AM", done: true },
-  { label: "Ideation + Development", time: "8:00 AM - 11:30 AM", done: true },
-  { label: "Lunch Break", time: "11:30 AM - 12:30 PM", done: true },
-  { label: "Development Phase 2", time: "12:30 PM - 2:45 PM", done: false },
-  { label: "Wrap-Up + Submissions", time: "2:45 PM - 3:00 PM", done: false },
-  { label: "Judging + Awards", time: "3:00 PM onward", done: false },
-];
-
-function weightedScore(team: UiTeam) {
-  return (
-    team.technical * weights.technical +
-    team.creativity * weights.creativity +
-    team.impact * weights.impact +
-    team.presentation * weights.presentation +
-    team.ux * weights.ux -
-    team.helpRequests * 0.15
-  );
-}
-
-function mapTeamToUi(team: BackendTeam): UiTeam {
-  const rawScore = Number(team.score ?? 0);
-
-  return {
-    id: team.id,
-    name: team.name,
-    technical: Math.max(Math.min(Math.round(rawScore) || 7, 10), 1),
-    creativity: 8,
-    impact: 8,
-    presentation: 8,
-    ux: 8,
-    progress: rawScore > 0 ? Math.min(rawScore * 10, 100) : 65,
-    helpRequests: 0,
-    status: team.project_name?.trim() ? "Project assigned" : "Awaiting project",
-  };
-}
 
 export default function JudgeView() {
-  const [teams, setTeams] = useState<UiTeam[]>([]);
+  const [teams, setTeams] = useState<any[]>([]);
   const [selectedTeam, setSelectedTeam] = useState("");
+  const [selectedTeamId, setSelectedTeamId] = useState<number | undefined>();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [scores, setScores] = useState({
-    technical: 8,
-    creativity: 8,
-    impact: 8,
-    presentation: 7,
-    ux: 8,
+    technical: 3,
+    creativity: 3,
+    impact: 3,
+    presentation: 3,
+    ux: 3,
   });
-  const [judgeNotes, setJudgeNotes] = useState(
-    "Strong concept, polished UI, clear presentation."
-  );
+  const [judgeNotes, setJudgeNotes] = useState("");
+  const [timeline, setTimeline] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchTeams();
+    fetchEvents();
+  }, []);
+
+  const fetchTeams = async () => {
+    try {
+      const res = await fetch("/api/team/teams/");
+      const data = await res.json();
+      setTeams(data);
+      if (data.length > 0 && !selectedTeamId) {
+        setSelectedTeam(data[0].name);
+        setSelectedTeamId(data[0].id);
+      }
+    } catch (err) {
+      console.error("Failed to fetch teams", err);
+    }
+  };
+
+  const fetchEvents = async () => {
+    try {
+      const res = await fetch("/api/team/events/");
+      const data = await res.json();
+      setTimeline(data.map((e: any) => ({
+        label: e.label,
+        time: `${new Date(e.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`,
+        done: new Date(e.start_time) < new Date()
+      })));
+    } catch (err) {
+      console.error("Failed to fetch events", err);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!selectedTeamId) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`/api/team/teams/${selectedTeamId}/submit-score/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...scores, notes: judgeNotes }),
+      });
+      if (res.ok) {
+        await fetchTeams();
+        alert("Score submitted successfully!");
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to submit score");
+      }
+    } catch (err) {
+      alert("Error submitting score");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     const loadTeams = async () => {
@@ -126,12 +127,7 @@ export default function JudgeView() {
   }, []);
 
   const rankedTeams = useMemo(() => {
-    return [...teams]
-      .map((team) => ({
-        ...team,
-        finalScore: Number(weightedScore(team).toFixed(2)),
-      }))
-      .sort((a, b) => b.finalScore - a.finalScore);
+    return [...teams].sort((a, b) => Number(b.score) - Number(a.score));
   }, [teams]);
 
   const judgePreviewScore = useMemo(() => {
@@ -144,9 +140,7 @@ export default function JudgeView() {
     return raw.toFixed(2);
   }, [scores]);
 
-  const role =
-    (localStorage.getItem("role") as "admin" | "judge" | "student") ||
-    "judge";
+  const role = (localStorage.getItem("role") as any) || "judge";
 
   return (
     <AppLayout>
@@ -160,33 +154,37 @@ export default function JudgeView() {
             <StatCard
               icon={<Trophy className="h-5 w-5" />}
               label="Leading Team"
-              value={rankedTeams[0]?.name || "No teams yet"}
-              detail={rankedTeams[0] ? `${rankedTeams[0].finalScore} pts` : "Waiting for data"}
+              value={rankedTeams[0]?.name || "N/A"}
+              detail={rankedTeams[0] ? `${Number(rankedTeams[0].score).toFixed(0)}% Average` : "No scores yet"}
             />
             <StatCard
               icon={<Users className="h-5 w-5" />}
               label="Active Teams"
-              value={String(teams.length)}
-              detail="Live from database"
+              value={teams.length.toString()}
+              detail="Participating teams"
             />
             <StatCard
               icon={<ClipboardList className="h-5 w-5" />}
               label="Judge Accounts"
-              value="5"
-              detail="Static for now"
+              value="Live"
+              detail="Synced in real time"
             />
             <StatCard
               icon={<Gauge className="h-5 w-5" />}
-              label="Live Submissions"
-              value={String(teams.filter((team) => team.progress > 0).length)}
-              detail="Derived from team records"
+              label="Scoring Scale"
+              value="1 - 5"
+              detail="Weighted results"
             />
           </div>
         </section>
 
         <JudgeSection
           selectedTeam={selectedTeam}
-          setSelectedTeam={setSelectedTeam}
+          selectedTeamId={selectedTeamId}
+          setSelectedTeam={(name, id) => {
+            setSelectedTeam(name);
+            setSelectedTeamId(id);
+          }}
           teamsSeed={teams}
           scores={scores}
           setScores={setScores}
@@ -194,17 +192,18 @@ export default function JudgeView() {
           judgeNotes={judgeNotes}
           setJudgeNotes={setJudgeNotes}
           rankedTeams={rankedTeams}
+          onSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
         />
 
-        <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+        <section className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-[28px] border border-white/10 bg-[#0A0A0A]/90 p-6 shadow-xl">
             <div className="mb-5 flex items-center gap-3">
               <BookOpen className="h-5 w-5 text-[#FF2D6F]" />
               <div>
-                <h3 className="text-2xl font-semibold">Clear Instructions</h3>
+                <h3 className="text-2xl font-semibold">Judging Criteria</h3>
                 <p className="text-sm text-zinc-300">
-                  Simple guidance everyone can scan quickly during the
-                  presentation.
+                  Weighted breakdown for awarding points (1-5).
                 </p>
               </div>
             </div>
@@ -227,7 +226,7 @@ export default function JudgeView() {
               <div>
                 <h3 className="text-2xl font-semibold">Event Timeline</h3>
                 <p className="text-sm text-zinc-300">
-                  A polished timeline block for the presentation demo.
+                  Today's schedule and milestones.
                 </p>
               </div>
             </div>

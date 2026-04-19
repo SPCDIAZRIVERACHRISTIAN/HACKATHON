@@ -27,7 +27,7 @@ restart: ## Restarts the docker containers
 	@echo "[*] RESTARTING APP..."
 	docker compose down
 	@echo "[+] Botting app back up!"
-	docker compose up -d --build
+	docker compose up -d
 
 logs: ## Shows docker logs
 	docker compose logs -f

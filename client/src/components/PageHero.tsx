@@ -1,12 +1,11 @@
 import diLogoUrl from "../assets/di-logo.png";
 import itapLogoUrl from "../assets/itap-logo.png";
-import { Search } from "lucide-react";
 import RoleNavbar from "./RoleNavbar";
 
 type Props = {
   title?: string;
   subtitle?: string;
-  active: "dashboard" | "judge" | "student" | "admin" | "none";
+  active: "dashboard" | "judge" | "student" | "admin" | "home" | "none";
   role: "admin" | "judge" | "student";
 };
 
@@ -46,14 +45,7 @@ export default function PageHero({
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 lg:min-w-[430px]">
-          <div className="flex items-center gap-3 rounded-2xl bg-[#111111] px-4 py-3">
-            <Search className="h-4 w-4 text-zinc-400" />
-            <input
-              className="w-full bg-transparent text-sm outline-none placeholder:text-zinc-500"
-              placeholder="Search teams, judges, or submissions"
-            />
-          </div>
+        <div className="flex flex-col gap-3 lg:min-w-[430px] self-end">
           <RoleNavbar active={active} role={role} />
         </div>
       </div>
